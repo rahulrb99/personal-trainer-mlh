@@ -60,7 +60,8 @@
               "type": "null"
             }
           ],
-          "description": "Current instance_id; null only for end_session or retry_deferred.",
+          "default": null,
+          "description": "Current instance_id. Omit for end_session or retry_deferred.",
           "title": "Exercise Instance Id"
         },
         "set_index": {
@@ -73,14 +74,13 @@
               "type": "null"
             }
           ],
-          "description": "Current 1-based set index; null for session-level actions.",
+          "default": null,
+          "description": "Current 1-based set index. Omit for end_session or retry_deferred.",
           "title": "Set Index"
         }
       },
       "required": [
-        "action",
-        "exercise_instance_id",
-        "set_index"
+        "action"
       ],
       "title": "SubmitWorkoutAction",
       "type": "object"

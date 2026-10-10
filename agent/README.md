@@ -13,6 +13,8 @@ Backend and agent assets are ready for configuration. A real ElevenLabs agent ha
 
 ## Local setup
 
+Verified permission: the API key needs **ElevenAgents Write** (`convai_write`) to request a conversation token. Read-only was rejected by the live provider. Leave unrelated endpoint permissions disabled.
+
 From repository root, Windows PowerShell:
 
 ```powershell
@@ -39,7 +41,7 @@ cp -n backend/.env.example backend/.env
 
 ## Contract and curated content
 
-`backend/tool_contract.py` defines canonical agent arguments. `python scripts/export_contracts.py` regenerates `agent/tools.json`, `contracts/client-tools.json`, HTTP schemas and OpenAPI. Existing frontend names and arguments are preserved. Map `current.instance_id` to action argument `exercise_instance_id`; map `current.id` to guidance argument `exercise_id`. Session-level actions use null targets. Read-only tools return state/catalog data; submit returns `{success:true,snapshot}` or `{success:false,error}` as JSON strings from the browser handler.
+`backend/tool_contract.py` defines canonical agent arguments. `python scripts/export_contracts.py` regenerates `agent/tools.json`, `contracts/client-tools.json`, HTTP schemas and OpenAPI. Existing frontend names and arguments are preserved. Map `current.instance_id` to action argument `exercise_instance_id`; map `current.id` to guidance argument `exercise_id`. Dashboard target parameters are optional: omit them for end/retry; the handler normalizes omitted values to null. Exercise actions still require both current targets. Read-only tools return state/catalog data; submit returns `{success:true,snapshot}` or `{success:false,error}` as JSON strings from the browser handler.
 
 `catalog/demo.json` is the runtime guidance source: setup, cue, mistake, muscles, approved alternatives, equipment and location. Avoid a second coaching catalog or provider knowledge-base copy that can drift. Content remains developer-authored demo material pending professional review. Mat must admit when a question exceeds that content. See `agent/GUIDANCE.md` for the review checklist.
 

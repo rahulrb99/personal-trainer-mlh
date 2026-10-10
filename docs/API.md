@@ -23,6 +23,8 @@ Errors: 401 invalid/missing session access; 409 stale/version conflict; 422 inva
 
 ### Stage 2 voice authorization and tools
 
+Dashboard compatibility update: submit_workout_action requires action; exercise_instance_id and set_index may be omitted for end_session/retry_deferred. Frontend normalizes omitted fields to null and rejects missing/stale instance or set for every exercise action. Event HTTP contract is unchanged. Dashboard parameter JSON uses an array of form descriptors, unlike the JSON Schema object in canonical specifications; do not paste those schemas directly into its form-JSON editor.
+
 `POST /voice/token` accepts only `{"session_id":"..."}` and a Bearer token for that session. Invalid/cross-session tokens are rejected before provider contact. Completed/ended sessions return 409. Response remains `{"conversation_token":"..."}` for existing client compatibility, typed in VoiceAuthorization.schema.json. Successful responses use Cache-Control: no-store. Backend key and agent ID never enter this response. Provider auth has a 10-second timeout, does not follow redirects or cache tokens, and suppresses upstream bodies/errors. `/health.voice_configured` reports nonblank environment presence only.
 
 The provider token authorizes the configured agent, not arbitrary workout actions; the separate session token still protects events. An already-connected conversation must be stopped by the frontend when the workout ends. Tokens are provider-issued short-lived credentials; this backend does not invent an expiry or claim provider-side revocation.

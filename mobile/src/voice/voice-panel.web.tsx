@@ -34,9 +34,9 @@ function VoiceControls({ credentials, snapshot, act }: VoiceProps) {
       submit_workout_action: async (value: unknown) => {
         processingTool.current = true;
         try {
-          const args = z.object({ action: actionSchema, exercise_instance_id: z.string().nullable(), set_index: z.number().int().nullable() }).parse(value);
+          const args = z.object({ action: actionSchema, exercise_instance_id: z.string().nullable().default(null), set_index: z.number().int().positive().nullable().default(null) }).parse(value);
           const fresh = latest.current;
-          if (args.action !== 'end_session' && args.action !== 'retry_deferred' && (args.exercise_instance_id !== fresh.current?.instance_id || (args.action === 'set_completed' && args.set_index !== fresh.set_index))) return JSON.stringify({ success: false, error: 'Stale target. Call get_session_state and ask user again.' });
+          if (args.action !== 'end_session' && args.action !== 'retry_deferred' && (args.exercise_instance_id !== fresh.current?.instance_id || args.set_index !== fresh.set_index)) return JSON.stringify({ success: false, error: 'Missing or stale target. Call get_session_state and ask user again.' });
           const result = await act(args.action, 'voice', args.exercise_instance_id ? { exercise_instance_id: args.exercise_instance_id, set_index: args.set_index } : undefined);
           toolVersion.current = result.version;
           return JSON.stringify({ success: true, snapshot: result });

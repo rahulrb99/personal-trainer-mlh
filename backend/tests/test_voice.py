@@ -97,4 +97,15 @@ def test_exported_tools_match_backend_and_client():
         assert tool["parameters"]["additionalProperties"] is False
     assert set(tools[-1]["parameters"]["properties"]["action"]["enum"]) == {action.value for action in Action}
     assert "rest_elapsed" not in tools[-1]["parameters"]["properties"]["action"]["enum"]
-    assert tools[-1]["parameters"]["required"] == ["action", "exercise_instance_id", "set_index"]
+    assert tools[-1]["parameters"]["required"] == ["action"]
+
+
+def test_optional_tool_targets_only_for_session_actions():
+    from pydantic import ValidationError
+    from backend.tool_contract import SubmitWorkoutAction
+    for kind in ("end_session", "retry_deferred"):
+        args = SubmitWorkoutAction.model_validate({"action": kind})
+        assert args.exercise_instance_id is None and args.set_index is None
+    for kind in ("set_completed", "equipment_claimed", "equipment_taken", "skip_exercise", "alternative_accepted", "alternative_declined"):
+        with pytest.raises(ValidationError):
+            SubmitWorkoutAction.model_validate({"action": kind})

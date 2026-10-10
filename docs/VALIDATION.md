@@ -1,5 +1,19 @@
 # Validation record
 
+## Windows install repair and Mac handoff
+
+Node 24.11.1, npm 11.6.2. Repaired mobile/package-lock.json with npm install --package-lock-only --ignore-scripts --no-audit --no-fund: PASS; package.json unchanged. npm ci accepted the repaired lock but package downloads ended in ECONNRESET. Cached retry was stopped before completion when user requested handoff to Mac. Frontend typecheck/lint/browser/audio checks remain NOT RUN on Windows; an attempted typecheck before installation finished could not find the tsc command and is not code-quality evidence. Backend local health: HTTP 200, voice_configured true. Published agent GET: HTTP 200, Mat prompt + correct omission instruction, three attached tools, authentication enabled. No secret/token/body logged. Mac owner should run install/typecheck/lint, then Stage 2 web checks and native spike; no live audio PASS is claimed here.
+
+## Live provider authorization check, October 10, 2026
+
+Retest after user enabled ElevenAgents Write: **PASS**. backend.voice.authorize_voice accepted the real provider response using ignored local credentials. No token/key was printed and no conversation was started. This verifies authorization only, not audio, client-tool execution, or overall Stage 2 acceptance.
+
+Windows Python 3.13.3 / pinned backend virtual environment; ignored backend/.env loaded locally, no credentials/token/body logged. Real ElevenLabs WebRTC token request returned HTTP 401, error category missing_permissions, explicitly requiring convai_write. Backend correctly surfaced sanitized HTTP 502. Read-only ElevenAgents API-key scope is insufficient for this endpoint. Next user action: change only ElevenAgents permission to Write, keep unrelated endpoints disabled, then rerun authorization. No conversation/audio was started; Stage 2 live voice checks remain NOT RUN.
+
+## Dashboard setup follow-up, Windows
+
+User-authorized browser configuration of Mat's draft: attached three existing client tools; verified response waiting and LLM parameter sources; saved action enum and optional target fields. Set repository prompt/greeting, preview defaults, and authentication. These are configuration observations, not live voice acceptance. The browser session became unavailable during final navigation; no publication/audio performed. Compatibility change normalizes omitted End/Retry targets to null and rejects incomplete/stale exercise targets. `.venv/Scripts/python.exe -m pytest backend/tests -q --basetemp=.test-runs/tool-config --tb=short`: **27 passed, 1 upstream warning in 2.62s**. Frontend typecheck/lint NOT RUN: npm ci fails on existing @emnapi lockfile inconsistencies; fallback dependency installation stalled and was stopped without changing manifest/lockfile. Live Stage 2 checks remain NOT RUN.
+
 Run: October 10, 2026 on macOS. Node 24.13.x, npm 11.x, Python 3.14.2, Expo 57.0.27, React Native 0.86.3, ElevenLabs React 1.17.0. Codex in-app browser (WebKit; browser version not exposed). API http://localhost:8000; app http://localhost:8081; demo mode uses 5-second rests. Xcode 26.1.1 and iOS/watchOS 26.1 runtimes are available; no native app was built.
 
 Stage numbers below match MASTER_PLAN.md. PASS applies to the stated environment and evidence, not the entire stage. Windows checks and joint contract approval remain pending.

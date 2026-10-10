@@ -1,5 +1,5 @@
 """Canonical client-tool argument schemas; not a second tool execution engine."""
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from backend.models import Action, StrictModel
 
@@ -14,8 +14,14 @@ class GetExerciseGuidance(StrictModel):
 
 class SubmitWorkoutAction(StrictModel):
     action: Action
-    exercise_instance_id: str | None = Field(description="Current instance_id; null only for end_session or retry_deferred.")
-    set_index: int | None = Field(ge=1, description="Current 1-based set index; null for session-level actions.")
+    exercise_instance_id: str | None = Field(default=None, description="Current instance_id. Omit for end_session or retry_deferred.")
+    set_index: int | None = Field(default=None, ge=1, description="Current 1-based set index. Omit for end_session or retry_deferred.")
+
+    @model_validator(mode="after")
+    def require_exercise_target(self):
+        if self.action not in {Action.END, Action.RETRY} and (not self.exercise_instance_id or self.set_index is None):
+            raise ValueError("Exercise actions require current instance and set index")
+        return self
 
 
 TOOL_MODELS = {
