@@ -21,6 +21,14 @@ Session state is persisted in SQLite. Rest expiry is backend-owned, checked peri
 
 Errors: 401 invalid/missing session access; 409 stale/version conflict; 422 invalid target/phase/schema/preferences; 503 voice not configured; 502 voice provider authorization failed. Domain errors return message and optional snapshot; FastAPI schema validation errors use detail. Clients handle both.
 
+### Stage 2 voice authorization and tools
+
+`POST /voice/token` accepts only `{"session_id":"..."}` and a Bearer token for that session. Invalid/cross-session tokens are rejected before provider contact. Completed/ended sessions return 409. Response remains `{"conversation_token":"..."}` for existing client compatibility, typed in VoiceAuthorization.schema.json. Successful responses use Cache-Control: no-store. Backend key and agent ID never enter this response. Provider auth has a 10-second timeout, does not follow redirects or cache tokens, and suppresses upstream bodies/errors. `/health.voice_configured` reports nonblank environment presence only.
+
+The provider token authorizes the configured agent, not arbitrary workout actions; the separate session token still protects events. An already-connected conversation must be stopped by the frontend when the workout ends. Tokens are provider-issued short-lived credentials; this backend does not invent an expiry or claim provider-side revocation.
+
+`backend/tool_contract.py` produces `contracts/client-tools.json` and `agent/tools.json`. The three names remain get_session_state, get_exercise_guidance(exercise_id), submit_workout_action(action, exercise_instance_id, set_index). All await responses. Guidance and state are read-only; action enum matches backend Event types and excludes rest_elapsed. Target `current.instance_id`, not `current.id`; current 1-based set_index is used for exercise actions, null targets for retry/end. Models define tool argument shapes; app handlers remain responsible for runtime validation and event submission. Agent setup: agent/README.md. No second conversation engine or backend tool executor is introduced.
+
 Unavailable equipment is session-local. Strict mode defers it. When remaining work is deferred, enter blocked and explicitly retry it. There is no global occupancy feed. Alternative acceptance creates a new exercise instance and still requires equipment confirmation.
 
 ## Joining browser watch controls

@@ -1,5 +1,17 @@
 # Initial implementation handoff
 
+## Stage 2 Windows-owner update — October 10, 2026
+
+Local, uncommitted update: backend/voice.py isolates typed private-agent authorization; backend/app.py uses it without changing conversation_token response shape. Invalid/cross-session access is checked before provider contact; finished sessions cannot request new tokens. Provider errors/malformed responses are sanitized; token responses are not cached. Ten-second provider timeout fits the client's twelve-second deadline. backend/tests/test_voice.py covers these behaviors and generated tool parity.
+
+backend/tool_contract.py is now canonical for three tool argument schemas. scripts/export_contracts.py exports agent/tools.json and contracts/client-tools.json plus VoiceRequest/VoiceAuthorization HTTP schemas. Action names, argument names, session schema and frontend interface are preserved. Generated tool JSON is a dashboard specification, not an API provisioning payload. No mobile/watch files or dependency manifests were edited.
+
+agent/prompt.md clarifies current.instance_id mapping, phase-aware introductions, read-only Repeat/questions, action acknowledgments, uncertain intent, data boundaries and curated-content limits. agent/README.md contains private-agent dashboard setup and Mac/Windows launch steps; agent/GUIDANCE.md defines the catalog review boundary. Professional content review is still pending.
+
+User confirmed no agent exists yet and requested setup instructions. Next user action: create/configure Mat using agent/README.md and put credentials in ignored backend/.env locally. Next Thanmay action: verify the same client tools in the browser, record all seven live web checks, and perform the iPhone simulator native spike. In particular, test an initial introduction after the state tool returns, Repeat/no mutations, successful/rejected Set done, mic denial/disconnect, end cleanup and idle/noise. Phase-specific prompt rules do not replace UI/action validation. Existing native adapter and voice lifecycle gaps remain Thanmay's work.
+
+Stage 2 remains open until live web evidence and a native PASS/concrete blocker are recorded. Automated provider responses are simulated and do not establish a real conversation, prompt performance or audio routing. No provider agent, public deployment, commit or push was created by this work.
+
 Local changes are not pushed. Both developers should inspect git status and existing edits before starting.
 
 ## Backend/agent owner

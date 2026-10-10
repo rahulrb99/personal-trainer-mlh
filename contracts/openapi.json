@@ -234,7 +234,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceAuthorization"
+                }
               }
             }
           },
@@ -807,10 +809,26 @@
         ],
         "title": "ValidationError"
       },
+      "VoiceAuthorization": {
+        "properties": {
+          "conversation_token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Conversation Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_token"
+        ],
+        "title": "VoiceAuthorization"
+      },
       "VoiceRequest": {
         "properties": {
           "session_id": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Session Id"
           }
         },

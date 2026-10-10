@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "conversation_token": {
+      "minLength": 1,
+      "title": "Conversation Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "conversation_token"
+  ],
+  "title": "VoiceAuthorization",
+  "type": "object"
+}

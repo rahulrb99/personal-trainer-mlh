@@ -1,0 +1,90 @@
+[
+  {
+    "name": "get_session_state",
+    "description": "Fetch authoritative state before a workout action. Read-only.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "GetSessionState",
+      "type": "object"
+    },
+    "wait_for_response": true
+  },
+  {
+    "name": "get_exercise_guidance",
+    "description": "Fetch curated catalog setup, cues, muscles and common mistakes. Read-only; no observed-form claims.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "exercise_id": {
+          "description": "Catalog exercise ID returned by the authoritative current snapshot; never an instance ID.",
+          "minLength": 1,
+          "title": "Exercise Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exercise_id"
+      ],
+      "title": "GetExerciseGuidance",
+      "type": "object"
+    },
+    "wait_for_response": true
+  },
+  {
+    "name": "submit_workout_action",
+    "description": "Submit one explicit user-requested action and wait for success. Never retry against a new target after rejection.",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "equipment_claimed",
+            "equipment_taken",
+            "set_completed",
+            "skip_exercise",
+            "retry_deferred",
+            "alternative_accepted",
+            "alternative_declined",
+            "end_session"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "exercise_instance_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Current instance_id; null only for end_session or retry_deferred.",
+          "title": "Exercise Instance Id"
+        },
+        "set_index": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Current 1-based set index; null for session-level actions.",
+          "title": "Set Index"
+        }
+      },
+      "required": [
+        "action",
+        "exercise_instance_id",
+        "set_index"
+      ],
+      "title": "SubmitWorkoutAction",
+      "type": "object"
+    },
+    "wait_for_response": true
+  }
+]

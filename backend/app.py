@@ -5,14 +5,14 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict
 
 from backend.models import CreateResult, CreateSession, Event, EventResult, Snapshot
 from backend.store import Store, StoreError
+from backend.voice import VoiceAuthorization, VoiceRequest, authorize_voice, voice_configured
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = json.loads((ROOT / "catalog/demo.json").read_text())
@@ -25,7 +25,7 @@ def bearer(credentials: HTTPAuthorizationCredentials | None = Depends(security))
     return credentials.credentials
 
 
-def create_app(database: str | None = None) -> FastAPI:
+def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     store = Store(database or os.environ.get("SPOTTER_DATABASE", str(ROOT / "backend/data/spotter.sqlite3")), CATALOG)
 
     async def tick():
@@ -53,7 +53,7 @@ def create_app(database: str | None = None) -> FastAPI:
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "schema_version": 1, "voice_configured": bool(os.environ.get("ELEVENLABS_API_KEY") and os.environ.get("ELEVENLABS_AGENT_ID"))}
+        return {"status": "ok", "schema_version": 1, "voice_configured": voice_configured()}
 
     @app.get("/catalog")
     def catalog():
@@ -101,24 +101,14 @@ def create_app(database: str | None = None) -> FastAPI:
             with suppress(RuntimeError):
                 await websocket.close(code=1008)
 
-    class VoiceRequest(BaseModel):
-        model_config = ConfigDict(extra="forbid")
-        session_id: str
-
-    @app.post("/voice/token")
-    async def voice_token(request: VoiceRequest, token: str = Depends(bearer)):
-        await asyncio.to_thread(store.get, request.session_id, token)
-        key, agent = os.environ.get("ELEVENLABS_API_KEY"), os.environ.get("ELEVENLABS_AGENT_ID")
-        if not key or not agent:
-            raise HTTPException(503, "Voice is not configured. Set backend ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID.")
-        try:
-            async with httpx.AsyncClient(timeout=15) as client:
-                result = await client.get("https://api.elevenlabs.io/v1/convai/conversation/token", params={"agent_id": agent}, headers={"xi-api-key": key})
-                result.raise_for_status()
-                body = result.json()
-                return {"conversation_token": body["token"]}
-        except (httpx.HTTPError, KeyError, ValueError) as exc:
-            raise HTTPException(502, "Unable to authorize the voice session. Check agent configuration.") from exc
+    @app.post("/voice/token", response_model=VoiceAuthorization)
+    async def voice_token(request: VoiceRequest, response: Response, token: str = Depends(bearer)):
+        state = await asyncio.to_thread(store.get, request.session_id, token)
+        if state["phase"] in {"ended", "completed"}:
+            raise HTTPException(409, "Workout finished. Start a new workout before connecting voice.")
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+        return await authorize_voice(voice_transport)
 
     return app
 

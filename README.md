@@ -50,6 +50,8 @@ The inline watch panel uses the same backend events. For a separate tab, open `/
 
 Configure an ElevenLabs Agent using `agent/README.md`. The web app has a Connect Mat's voice button. Without credentials the button reports that voice is not configured; button-driven workouts remain usable. No prerecorded speech is presented as live AI.
 
+Stage 2 backend tool schemas and private authorization are implemented and tested; live voice remains pending agent creation. Follow the detailed agent setup/runbook before validating speech. Thanmay retains ownership of browser handlers and the native spike.
+
 Set provider credentials only on backend, never under EXPO_PUBLIC variables:
 
 ```sh

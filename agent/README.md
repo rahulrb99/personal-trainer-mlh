@@ -1,9 +1,54 @@
-# Configure Mat
+# Configure Mat — Stage 2 Windows owner
 
-1. Create an ElevenLabs Agent and select a voice. Paste `prompt.md` as its prompt.
-2. Configure dynamic variables `workout_context`, `coaching_style`, `user_name` (provided by the app).
-3. Add three **client** tools matching `tools.json`. Make each tool block/wait for its response so the agent cannot assume success.
-4. Keep authentication enabled. Set `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID` in the backend environment only.
-5. Start backend with its environment file and connect from a browser on localhost.
+Backend and agent assets are ready for configuration. A real ElevenLabs agent has not been created or tested by this work. Thanmay owns browser handlers and the native audio spike; automated checks do not certify live audio.
 
-Provider configuration and a real live conversation still require validation. No agent or voice is provisioned automatically by this repository. Stage 1 works without provider credentials.
+## ElevenLabs dashboard setup
+
+1. Create an agent named Mat. Choose an available conversational model and English voice in your account. Keep ElevenLabs as the only conversation system.
+2. Paste `agent/prompt.md` into the system prompt. Set first message to: “Hi {{user_name}}, I’m Mat. Let me check your workout.” Do not introduce an exercise before the state tool returns.
+3. Configure dynamic variables `workout_context`, `coaching_style`, `user_name`. The app supplies these at connection. Dashboard preview placeholders may be empty context, standard, and Demo. Actual workout tools require the real app's handlers, which are absent in dashboard preview.
+4. Add exactly three tools of type **Client** using `agent/tools.json`. Names and arguments are case-sensitive. Enable **Wait for response** for every tool. This file is a generated dashboard specification, not an API create-agent request body. Its JSON Schema `anyOf` fields mean nullable string/integer arguments. No webhook URL or backend credential belongs in a client tool.
+5. Keep agent authentication enabled. Backend obtains a WebRTC conversation token using its API key; browser receives only `conversation_token`. Review provider recording/retention settings for the demo. Local code does not log raw audio/transcripts by default.
+6. Save the agent and copy its ID. Create an API key with permissions for that agent's conversation authorization. Keep both values in ignored `backend/.env` only, never in frontend public configuration, chat, screenshots or commits.
+
+## Local setup
+
+From repository root, Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+# First setup only; preserve an existing backend/.env.
+Copy-Item backend/.env.example backend/.env
+# Edit backend/.env locally: fill ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID.
+.\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --env-file backend/.env
+```
+
+macOS equivalents:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+# First setup only.
+cp -n backend/.env.example backend/.env
+# Edit backend/.env locally.
+.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --env-file backend/.env
+```
+
+`scripts/run_backend.py` does not load `.env`; use the explicit command above for voice. Start Thanmay's app with `cd mobile`, `npm ci`, `npm run web`. Start a workout on localhost:8081, choose Connect Mat's voice and grant microphone permission. `/health` reports configuration presence, not valid credentials or a live connection.
+
+## Contract and curated content
+
+`backend/tool_contract.py` defines canonical agent arguments. `python scripts/export_contracts.py` regenerates `agent/tools.json`, `contracts/client-tools.json`, HTTP schemas and OpenAPI. Existing frontend names and arguments are preserved. Map `current.instance_id` to action argument `exercise_instance_id`; map `current.id` to guidance argument `exercise_id`. Session-level actions use null targets. Read-only tools return state/catalog data; submit returns `{success:true,snapshot}` or `{success:false,error}` as JSON strings from the browser handler.
+
+`catalog/demo.json` is the runtime guidance source: setup, cue, mistake, muscles, approved alternatives, equipment and location. Avoid a second coaching catalog or provider knowledge-base copy that can drift. Content remains developer-authored demo material pending professional review. Mat must admit when a question exceeds that content. See `agent/GUIDANCE.md` for the review checklist.
+
+## Live acceptance
+
+Record Stage 2 web checks 1–7 separately in docs/VALIDATION.md: introduction/spoken question; Repeat without mutation; Set done acknowledged after one accepted event; grounded muscle/guidance answer; denied microphone/disconnect preserves buttons; ending releases audio; two-minute idle/noise sample has zero transitions. Compare version/completed count before and after Set done; ambiguous “done” should request clarification. Simulated provider responses do not prove live speech.
+
+Thanmay records native spike checks 1–4 on Mac: development build launch, actual microphone/reply, end/restart, PASS or concrete blocker. Expo Go and Windows browser tests cannot satisfy those checks.
+
+Troubleshooting: 401 means session access mismatch; 409 means workout finished; 503 means missing configuration; 502 means provider authorization failed. Provider bodies are suppressed. Check key permissions, private-agent ID and connectivity locally. Reconnect with a newly issued token; never cache or log it. Provider tokens authorize an agent conversation; separate backend session tokens authorize workout access. Frontend ending cleanup stops existing conversations; issuing a token is not provider-side revocation.
+
+References checked October 10, 2026: [WebRTC token](https://elevenlabs.io/docs/eleven-agents/api-reference/conversations/get-webrtc-token), [client tools and Wait for response](https://elevenlabs.io/docs/eleven-agents/customization/tools/client-tools), [dynamic variables](https://elevenlabs.io/docs/eleven-agents/customization/personalization/dynamic-variables).
