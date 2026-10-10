@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "Exercise": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "equipment": {
+          "title": "Equipment",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "muscles": {
+          "title": "Muscles",
+          "type": "string"
+        },
+        "sets": {
+          "exclusiveMinimum": 0,
+          "title": "Sets",
+          "type": "integer"
+        },
+        "reps": {
+          "exclusiveMinimum": 0,
+          "title": "Reps",
+          "type": "integer"
+        },
+        "rest_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Rest Seconds",
+          "type": "integer"
+        },
+        "setup": {
+          "title": "Setup",
+          "type": "string"
+        },
+        "cue": {
+          "title": "Cue",
+          "type": "string"
+        },
+        "mistake": {
+          "title": "Mistake",
+          "type": "string"
+        },
+        "alternatives": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "equipment",
+        "location",
+        "muscles",
+        "sets",
+        "reps",
+        "rest_seconds",
+        "setup",
+        "cue",
+        "mistake",
+        "alternatives"
+      ],
+      "title": "Exercise",
+      "type": "object"
+    },
+    "ExerciseInstance": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "equipment": {
+          "title": "Equipment",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "muscles": {
+          "title": "Muscles",
+          "type": "string"
+        },
+        "sets": {
+          "exclusiveMinimum": 0,
+          "title": "Sets",
+          "type": "integer"
+        },
+        "reps": {
+          "exclusiveMinimum": 0,
+          "title": "Reps",
+          "type": "integer"
+        },
+        "rest_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Rest Seconds",
+          "type": "integer"
+        },
+        "setup": {
+          "title": "Setup",
+          "type": "string"
+        },
+        "cue": {
+          "title": "Cue",
+          "type": "string"
+        },
+        "mistake": {
+          "title": "Mistake",
+          "type": "string"
+        },
+        "alternatives": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "instance_id": {
+          "title": "Instance Id",
+          "type": "string"
+        },
+        "original_exercise_id": {
+          "title": "Original Exercise Id",
+          "type": "string"
+        },
+        "completed_sets": {
+          "minimum": 0,
+          "title": "Completed Sets",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "equipment",
+        "location",
+        "muscles",
+        "sets",
+        "reps",
+        "rest_seconds",
+        "setup",
+        "cue",
+        "mistake",
+        "alternatives",
+        "instance_id",
+        "original_exercise_id",
+        "completed_sets"
+      ],
+      "title": "ExerciseInstance",
+      "type": "object"
+    },
+    "Preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "You",
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "mode": {
+          "default": "strict",
+          "enum": [
+            "strict",
+            "alternatives"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "excluded_exercise_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Excluded Exercise Ids",
+          "type": "array"
+        },
+        "coaching": {
+          "default": "standard",
+          "enum": [
+            "quiet",
+            "standard",
+            "teach"
+          ],
+          "title": "Coaching",
+          "type": "string"
+        }
+      },
+      "title": "Preferences",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "server_time": {
+      "format": "date-time",
+      "title": "Server Time",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "ended_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Ended At"
+    },
+    "phase": {
+      "enum": [
+        "awaiting_equipment",
+        "awaiting_alternative_confirmation",
+        "exercising",
+        "resting",
+        "blocked",
+        "completed",
+        "ended"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
+    "preferences": {
+      "$ref": "#/$defs/Preferences"
+    },
+    "demo_mode": {
+      "title": "Demo Mode",
+      "type": "boolean"
+    },
+    "current": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExerciseInstance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "set_index": {
+      "minimum": 1,
+      "title": "Set Index",
+      "type": "integer"
+    },
+    "rest_deadline": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rest Deadline"
+    },
+    "queue": {
+      "items": {
+        "$ref": "#/$defs/ExerciseInstance"
+      },
+      "title": "Queue",
+      "type": "array"
+    },
+    "deferred": {
+      "items": {
+        "$ref": "#/$defs/ExerciseInstance"
+      },
+      "title": "Deferred",
+      "type": "array"
+    },
+    "completed": {
+      "items": {
+        "$ref": "#/$defs/ExerciseInstance"
+      },
+      "title": "Completed",
+      "type": "array"
+    },
+    "skipped": {
+      "items": {
+        "$ref": "#/$defs/ExerciseInstance"
+      },
+      "title": "Skipped",
+      "type": "array"
+    },
+    "pending_alternative": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Exercise"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_decision": {
+      "title": "Last Decision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "session_id",
+    "version",
+    "server_time",
+    "created_at",
+    "ended_at",
+    "phase",
+    "preferences",
+    "demo_mode",
+    "current",
+    "set_index",
+    "rest_deadline",
+    "queue",
+    "deferred",
+    "completed",
+    "skipped",
+    "pending_alternative",
+    "last_decision"
+  ],
+  "title": "Snapshot",
+  "type": "object"
+}

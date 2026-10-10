@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "Action": {
+      "enum": [
+        "equipment_claimed",
+        "equipment_taken",
+        "set_completed",
+        "skip_exercise",
+        "retry_deferred",
+        "alternative_accepted",
+        "alternative_declined",
+        "end_session"
+      ],
+      "title": "Action",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "expected_version": {
+      "minimum": 1,
+      "title": "Expected Version",
+      "type": "integer"
+    },
+    "source": {
+      "enum": [
+        "phone",
+        "watch",
+        "web",
+        "voice"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/$defs/Action"
+    },
+    "exercise_instance_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Exercise Instance Id"
+    },
+    "set_index": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Set Index"
+    },
+    "payload": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "event_id",
+    "expected_version",
+    "source",
+    "type"
+  ],
+  "title": "Event",
+  "type": "object"
+}

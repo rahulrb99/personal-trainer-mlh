@@ -1,0 +1,70 @@
+[
+  {
+    "name": "get_session_state",
+    "description": "Get authoritative workout snapshot before progression.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "wait_for_response": true
+  },
+  {
+    "name": "get_exercise_guidance",
+    "description": "Get developer-authored exercise guidance.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "exercise_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "exercise_id"
+      ]
+    },
+    "wait_for_response": true
+  },
+  {
+    "name": "submit_workout_action",
+    "description": "Request validated workout action. Never assume success.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "equipment_claimed",
+            "equipment_taken",
+            "set_completed",
+            "skip_exercise",
+            "retry_deferred",
+            "alternative_accepted",
+            "alternative_declined",
+            "end_session"
+          ]
+        },
+        "exercise_instance_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "set_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      },
+      "required": [
+        "action",
+        "exercise_instance_id",
+        "set_index"
+      ],
+      "additionalProperties": false
+    },
+    "wait_for_response": true
+  }
+]

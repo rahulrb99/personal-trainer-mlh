@@ -1,6 +1,6 @@
 # Spotter / Mat — staged web-first master plan
 
-Updated October 10, 2026. This replaces the simulator-first plan. Planning only: stages below have not been implemented or validated.
+Updated October 10, 2026. This replaces the simulator-first plan. Implementation is underway. See docs/VALIDATION.md for check-by-check evidence; native and live voice gates remain open.
 
 ## Outcome and scope
 

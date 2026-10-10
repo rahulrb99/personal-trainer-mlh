@@ -1,0 +1,1 @@
+"""Spotter authoritative workout API."""

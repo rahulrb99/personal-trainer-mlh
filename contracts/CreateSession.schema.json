@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "Preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "You",
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "mode": {
+          "default": "strict",
+          "enum": [
+            "strict",
+            "alternatives"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "excluded_exercise_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Excluded Exercise Ids",
+          "type": "array"
+        },
+        "coaching": {
+          "default": "standard",
+          "enum": [
+            "quiet",
+            "standard",
+            "teach"
+          ],
+          "title": "Coaching",
+          "type": "string"
+        }
+      },
+      "title": "Preferences",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "routine_id": {
+      "default": "full-body",
+      "title": "Routine Id",
+      "type": "string"
+    },
+    "preferences": {
+      "$ref": "#/$defs/Preferences"
+    },
+    "demo_mode": {
+      "default": false,
+      "title": "Demo Mode",
+      "type": "boolean"
+    }
+  },
+  "title": "CreateSession",
+  "type": "object"
+}

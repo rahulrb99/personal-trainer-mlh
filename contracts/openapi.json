@@ -1,0 +1,832 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Spotter workout API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "summary": "Catalog",
+        "operationId": "catalog_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "post": {
+        "summary": "Create",
+        "operationId": "create_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSession"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}": {
+      "get": {
+        "summary": "Get",
+        "operationId": "get_sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/events": {
+      "post": {
+        "summary": "Post Event",
+        "operationId": "post_event_sessions__session_id__events_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Event"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/summary": {
+      "get": {
+        "summary": "Get Summary",
+        "operationId": "get_summary_sessions__session_id__summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/voice/token": {
+      "post": {
+        "summary": "Voice Token",
+        "operationId": "voice_token_voice_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Action": {
+        "type": "string",
+        "enum": [
+          "equipment_claimed",
+          "equipment_taken",
+          "set_completed",
+          "skip_exercise",
+          "retry_deferred",
+          "alternative_accepted",
+          "alternative_declined",
+          "end_session"
+        ],
+        "title": "Action"
+      },
+      "CreateResult": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          },
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "access_token"
+        ],
+        "title": "CreateResult"
+      },
+      "CreateSession": {
+        "properties": {
+          "routine_id": {
+            "type": "string",
+            "title": "Routine Id",
+            "default": "full-body"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          },
+          "demo_mode": {
+            "type": "boolean",
+            "title": "Demo Mode",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateSession"
+      },
+      "Event": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Id"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "phone",
+              "watch",
+              "web",
+              "voice"
+            ],
+            "title": "Source"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "exercise_instance_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Instance Id"
+          },
+          "set_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Index"
+          },
+          "payload": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_id",
+          "expected_version",
+          "source",
+          "type"
+        ],
+        "title": "Event"
+      },
+      "EventResult": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          },
+          "replayed": {
+            "type": "boolean",
+            "title": "Replayed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "replayed"
+        ],
+        "title": "EventResult"
+      },
+      "Exercise": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "equipment": {
+            "type": "string",
+            "title": "Equipment"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "muscles": {
+            "type": "string",
+            "title": "Muscles"
+          },
+          "sets": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Sets"
+          },
+          "reps": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Reps"
+          },
+          "rest_seconds": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Rest Seconds"
+          },
+          "setup": {
+            "type": "string",
+            "title": "Setup"
+          },
+          "cue": {
+            "type": "string",
+            "title": "Cue"
+          },
+          "mistake": {
+            "type": "string",
+            "title": "Mistake"
+          },
+          "alternatives": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Alternatives"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "equipment",
+          "location",
+          "muscles",
+          "sets",
+          "reps",
+          "rest_seconds",
+          "setup",
+          "cue",
+          "mistake",
+          "alternatives"
+        ],
+        "title": "Exercise"
+      },
+      "ExerciseInstance": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "equipment": {
+            "type": "string",
+            "title": "Equipment"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "muscles": {
+            "type": "string",
+            "title": "Muscles"
+          },
+          "sets": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Sets"
+          },
+          "reps": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Reps"
+          },
+          "rest_seconds": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Rest Seconds"
+          },
+          "setup": {
+            "type": "string",
+            "title": "Setup"
+          },
+          "cue": {
+            "type": "string",
+            "title": "Cue"
+          },
+          "mistake": {
+            "type": "string",
+            "title": "Mistake"
+          },
+          "alternatives": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Alternatives"
+          },
+          "instance_id": {
+            "type": "string",
+            "title": "Instance Id"
+          },
+          "original_exercise_id": {
+            "type": "string",
+            "title": "Original Exercise Id"
+          },
+          "completed_sets": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Completed Sets"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "equipment",
+          "location",
+          "muscles",
+          "sets",
+          "reps",
+          "rest_seconds",
+          "setup",
+          "cue",
+          "mistake",
+          "alternatives",
+          "instance_id",
+          "original_exercise_id",
+          "completed_sets"
+        ],
+        "title": "ExerciseInstance"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Preferences": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name",
+            "default": "You"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "strict",
+              "alternatives"
+            ],
+            "title": "Mode",
+            "default": "strict"
+          },
+          "excluded_exercise_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Excluded Exercise Ids"
+          },
+          "coaching": {
+            "type": "string",
+            "enum": [
+              "quiet",
+              "standard",
+              "teach"
+            ],
+            "title": "Coaching",
+            "default": "standard"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Preferences"
+      },
+      "Snapshot": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          },
+          "server_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Server Time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "awaiting_equipment",
+              "awaiting_alternative_confirmation",
+              "exercising",
+              "resting",
+              "blocked",
+              "completed",
+              "ended"
+            ],
+            "title": "Phase"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          },
+          "demo_mode": {
+            "type": "boolean",
+            "title": "Demo Mode"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExerciseInstance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "set_index": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Set Index"
+          },
+          "rest_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rest Deadline"
+          },
+          "queue": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseInstance"
+            },
+            "type": "array",
+            "title": "Queue"
+          },
+          "deferred": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseInstance"
+            },
+            "type": "array",
+            "title": "Deferred"
+          },
+          "completed": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseInstance"
+            },
+            "type": "array",
+            "title": "Completed"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/ExerciseInstance"
+            },
+            "type": "array",
+            "title": "Skipped"
+          },
+          "pending_alternative": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Exercise"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_decision": {
+            "type": "string",
+            "title": "Last Decision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "session_id",
+          "version",
+          "server_time",
+          "created_at",
+          "ended_at",
+          "phase",
+          "preferences",
+          "demo_mode",
+          "current",
+          "set_index",
+          "rest_deadline",
+          "queue",
+          "deferred",
+          "completed",
+          "skipped",
+          "pending_alternative",
+          "last_decision"
+        ],
+        "title": "Snapshot"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VoiceRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id"
+        ],
+        "title": "VoiceRequest"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "gym": {"id": "demo-gym", "name": "North gym", "description": "Fictional gym for this prototype"},
+  "exercises": [
+    {"id": "chest-press", "name": "Chest press", "equipment": "Chest press machine", "location": "Floor 1 · Strength zone", "muscles": "Chest and triceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Adjust the seat so the handles are around chest height. Choose a comfortable weight.", "cue": "Keep your back supported. Press smoothly, then return with control.", "mistake": "Avoid shrugging your shoulders or locking your elbows forcefully.", "alternatives": ["dumbbell-press"]},
+    {"id": "seated-row", "name": "Seated row", "equipment": "Seated row machine", "location": "Floor 1 · Cable zone", "muscles": "Upper back and biceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Adjust the seat and support so you can reach the handles comfortably.", "cue": "Keep your torso steady and pull your elbows back with control.", "mistake": "Avoid swinging your torso to move the weight.", "alternatives": []},
+    {"id": "leg-extension", "name": "Leg extension", "equipment": "Leg extension machine", "location": "Floor 1 · Strength zone", "muscles": "Quadriceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Follow the machine setup instructions; align the pivot with your knee and position the pad above your ankle.", "cue": "Extend smoothly through a comfortable range and lower with control.", "mistake": "Avoid throwing the weight or forcing an uncomfortable range.", "alternatives": []},
+    {"id": "dumbbell-press", "name": "Dumbbell bench press", "equipment": "Dumbbells and flat bench", "location": "Floor 1 · Free weights", "muscles": "Chest and triceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Use a stable bench and a light, comfortable pair of dumbbells. Ask gym staff for help with unfamiliar setup.", "cue": "Press smoothly and keep your wrists aligned over your forearms.", "mistake": "Avoid dropping the weights quickly or forcing a deep range.", "alternatives": []}
+  ],
+  "routines": [{"id": "full-body", "name": "Full body foundations", "description": "Three movements. A simple place to start.", "exercise_ids": ["chest-press", "seated-row", "leg-extension"]}],
+  "content_status": "Developer-authored demo guidance; professional review pending. Not observed form feedback."
+}
