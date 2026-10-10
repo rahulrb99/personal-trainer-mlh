@@ -2,7 +2,7 @@
 
 A voice-guided gym companion that follows your plan and adapts when equipment is reported taken. Web first, then iPhone and Apple Watch simulators.
 
-Current implementation: shared Expo/React Native Web screens, FastAPI/SQLite workout engine, three-exercise demo catalog, browser watch panel, and ElevenLabs web integration ready for configuration. Native voice/watch are later stages. See `docs/VALIDATION.md` for actual check results.
+Current implementation: shared Expo/React Native Web screens, FastAPI/SQLite workout engine, three-exercise demo catalog, browser watch panel, and web/native ElevenLabs voice adapters. Stage 2 live voice configuration is pending; the native simulator build is currently blocked. The SwiftUI watch app remains a later stage. See `docs/VALIDATION.md` for actual check results.
 
 ## Requirements
 

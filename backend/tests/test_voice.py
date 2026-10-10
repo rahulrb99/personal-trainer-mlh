@@ -90,7 +90,13 @@ def test_exported_tools_match_backend_and_client():
     tools = tool_specifications()
     assert json.loads((root / "agent/tools.json").read_text()) == tools
     assert json.loads((root / "contracts/client-tools.json").read_text()) == tools
-    client = (root / "mobile/src/voice/voice-panel.web.tsx").read_text(encoding="utf-8")
+    # Client-tool handlers are shared by the web and native provider adapters.
+    client = (root / "mobile/src/voice/voice-panel-shared.tsx").read_text(encoding="utf-8")
+    web_adapter = (root / "mobile/src/voice/voice-panel.web.tsx").read_text(encoding="utf-8")
+    native_adapter = (root / "mobile/src/voice/voice-panel.tsx").read_text(encoding="utf-8")
+    assert "VoicePanelShared" in web_adapter and "VoicePanelShared" in native_adapter
+    assert "@elevenlabs/react'" in web_adapter
+    assert "@elevenlabs/react-native'" in native_adapter
     for tool in tools:
         assert f'{tool["name"]}:' in client
         assert tool["wait_for_response"] is True

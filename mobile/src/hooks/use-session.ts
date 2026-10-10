@@ -3,81 +3,167 @@ import { api, ApiError, streamUrl } from '@/api/client';
 import { Action, Credentials, Preferences, Snapshot, snapshotSchema } from '@/api/schema';
 import { loadSession, saveSession } from '@/api/session-storage';
 
+type ConnectionState = 'Connecting' | 'Live' | 'Reconnecting' | 'Offline';
+
+const reconnectDelay = (attempt: number) => Math.min(1000 * 2 ** Math.min(attempt, 5), 30_000);
+
 export function useSession() {
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [connection, setConnection] = useState('Connecting');
+  const [connection, setConnection] = useState<ConnectionState>('Connecting');
   const [restSeconds, setRestSeconds] = useState(0);
   const current = useRef<Snapshot | null>(null);
   const busy = useRef(false);
   const offset = useRef(0);
+
   const accept = useCallback((state: Snapshot) => {
-    if (!current.current || state.session_id !== current.current.session_id || state.version >= current.current.version) {
-      offset.current = Date.parse(state.server_time) - Date.now();
-      setRestSeconds(state.rest_deadline ? Math.max(0, Math.ceil((Date.parse(state.rest_deadline) - Date.now() - offset.current) / 1000)) : 0);
-      current.current = state;
-      setSnapshot(state);
-    }
+    const previous = current.current;
+    if (previous?.session_id === state.session_id && state.version <= previous.version) return false;
+
+    offset.current = Date.parse(state.server_time) - Date.now();
+    setRestSeconds(state.rest_deadline ? Math.max(0, Math.ceil((Date.parse(state.rest_deadline) - Date.now() - offset.current) / 1000)) : 0);
+    current.current = state;
+    setSnapshot(state);
+    return true;
   }, []);
+
   useEffect(() => { loadSession().then(setCredentials).catch(() => setError('Saved session could not be read. Start a new workout.')); }, []);
+
   useEffect(() => {
     if (!credentials) return;
+    const sessionCredentials: Credentials = credentials;
+
     let active = true;
     let socket: WebSocket | null = null;
-    let retry: ReturnType<typeof setTimeout>;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let connecting = false;
+    let retryAttempt = 0;
+
+    // A different session must not inherit an older session's in-memory state.
+    if (current.current && current.current.session_id !== sessionCredentials.session_id) {
+      current.current = null;
+      setSnapshot(null);
+      setRestSeconds(0);
+    }
+
+    function scheduleReconnect() {
+      if (!active || retry !== undefined) return;
+      setConnection('Reconnecting');
+      retry = setTimeout(() => {
+        retry = undefined;
+        void connect();
+      }, reconnectDelay(retryAttempt++));
+    }
+
     async function connect() {
-      if (!credentials || !active) return;
+      if (!active || connecting) return;
+      connecting = true;
+      setConnection(retryAttempt === 0 ? 'Connecting' : 'Reconnecting');
       try {
-        const state = await api.snapshot(credentials);
+        const state = await api.snapshot(sessionCredentials);
         if (!active) return;
-        accept(state); setError(null);
-        socket = new WebSocket(streamUrl(credentials.session_id));
-        socket.onopen = () => { socket?.send(JSON.stringify({ access_token: credentials.access_token })); if (active) setConnection('Live'); };
-        socket.onmessage = (event) => {
+        if (state.session_id !== sessionCredentials.session_id) throw new Error('The session service returned a different session. Rejoin the workout.');
+        accept(state);
+        setError(null);
+
+        const candidate = new WebSocket(streamUrl(sessionCredentials.session_id));
+        socket = candidate;
+        let receivedSnapshot = false;
+        candidate.onopen = () => {
+          if (!active || socket !== candidate) return;
           try {
-            const value: unknown = JSON.parse(event.data);
-            if (typeof value === 'object' && value !== null && 'snapshot' in value) {
-              const parsed = snapshotSchema.safeParse(value.snapshot);
-              if (parsed.success && active) accept(parsed.data);
-            }
-          } catch { if (active) setError('An invalid live update was ignored. Refresh your session.'); }
+            candidate.send(JSON.stringify({ access_token: sessionCredentials.access_token }));
+          } catch {
+            setError('Could not authorize the live session stream. Reconnecting to the latest state.');
+            candidate.close();
+          }
         };
-        socket.onclose = () => { if (active) { setConnection('Reconnecting'); retry = setTimeout(connect, 2000); } };
-        socket.onerror = () => socket?.close();
+        candidate.onmessage = (event) => {
+          if (!active || socket !== candidate) return;
+          try {
+            if (typeof event.data !== 'string') throw new Error('Live update was not text.');
+            const frame: unknown = JSON.parse(event.data);
+            if (typeof frame !== 'object' || frame === null || !('type' in frame) || frame.type !== 'snapshot' || !('snapshot' in frame)) {
+              throw new Error('Live update used an unsupported frame.');
+            }
+            const parsed = snapshotSchema.safeParse(frame.snapshot);
+            if (!parsed.success || parsed.data.session_id !== sessionCredentials.session_id) {
+              throw new Error('Live update did not match the session contract.');
+            }
+            accept(parsed.data);
+            receivedSnapshot = true;
+            retryAttempt = 0;
+            setError(null);
+            setConnection('Live');
+          } catch {
+            setError('The live session sent an invalid update. Reconnecting to the latest session state.');
+            candidate.close();
+          }
+        };
+        candidate.onclose = () => {
+          if (!active || socket !== candidate) return;
+          socket = null;
+          if (!receivedSnapshot) setConnection('Reconnecting');
+          scheduleReconnect();
+        };
+        candidate.onerror = () => {
+          if (active && socket === candidate) candidate.close();
+        };
       } catch (failure) {
-        if (active) {
-          setError(failure instanceof Error ? failure.message : 'Cannot load session'); setConnection('Offline');
-          if (failure instanceof ApiError && failure.status === 401) { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); }
-          else retry = setTimeout(connect, 3000);
+        if (!active) return;
+        setError(failure instanceof Error ? failure.message : 'Cannot load session');
+        setConnection('Offline');
+        if (failure instanceof ApiError && failure.status === 401) {
+          await saveSession(null);
+          if (active) {
+            setCredentials(null);
+            if (current.current?.session_id === sessionCredentials.session_id) {
+              current.current = null;
+              setSnapshot(null);
+            }
+          }
+        } else {
+          scheduleReconnect();
         }
+      } finally {
+        connecting = false;
       }
     }
-    connect();
-    return () => { active = false; clearTimeout(retry); socket?.close(); };
+
+    void connect();
+    return () => {
+      active = false;
+      if (retry !== undefined) clearTimeout(retry);
+      socket?.close();
+    };
   }, [credentials, accept]);
+
   useEffect(() => {
     const timer = setInterval(() => setRestSeconds(snapshot?.rest_deadline ? Math.max(0, Math.ceil((Date.parse(snapshot.rest_deadline) - Date.now() - offset.current) / 1000)) : 0), 250);
     return () => clearInterval(timer);
   }, [snapshot?.rest_deadline]);
+
   const act = useCallback(async (type: Action, source: 'web' | 'watch' | 'voice' = 'web', target?: { exercise_instance_id: string; set_index: number | null }) => {
     if (!credentials || !current.current) throw new Error('Start or join a workout first.');
     if (busy.current) throw new Error('Another action is awaiting confirmation.');
     const state = current.current;
-    if (target && (state.current?.instance_id !== target.exercise_instance_id || (type === 'set_completed' && state.set_index !== target.set_index))) throw new Error('The spoken action targets an old exercise or set. Ask Mat for the current state.');
+    if (target && (state.current?.instance_id !== target.exercise_instance_id || state.set_index !== target.set_index)) throw new Error('The spoken action targets an old exercise or set. Ask Mat for the current state.');
     busy.current = true; setPending(true); setError(null);
     try { const result = await api.event(credentials, state, type, source); accept(result.snapshot); return result.snapshot; }
     catch (failure) { if (failure instanceof ApiError && failure.snapshot) accept(failure.snapshot); setError(failure instanceof Error ? failure.message : 'Action failed'); throw failure; }
     finally { busy.current = false; setPending(false); }
   }, [credentials, accept]);
+
   async function start(preferences: Preferences, demo: boolean) {
     setPending(true); setError(null);
     try { const result = await api.create(preferences, demo); const c = { session_id: result.snapshot.session_id, access_token: result.access_token }; await saveSession(c); accept(result.snapshot); setCredentials(c); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Cannot start workout'); }
     finally { setPending(false); }
   }
-  async function reset() { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); setError(null); }
+
+  async function reset() { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); setError(null); setConnection('Offline'); }
   async function join(c: Credentials) { const state = await api.snapshot(c); await saveSession(c); accept(state); setCredentials(c); }
   return { credentials, snapshot, error, pending, connection, restSeconds, start, reset, join, act };
 }

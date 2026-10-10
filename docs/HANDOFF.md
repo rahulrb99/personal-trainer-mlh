@@ -46,7 +46,7 @@ Catalog is developer-authored, professional review pending. Refine with verified
 
 ## Frontend owner
 
-Shared app lives under mobile/src. Native-only voice is not implemented yet; `.web.tsx` contains the browser integration. api/session-storage.web.ts keeps local session access per tab; native storage is memory-only until the native stage adds SecureStore. Windows/native verification remains separate.
+Shared app lives under mobile/src. Web and native ElevenLabs provider adapters use the shared workout voice panel and client-tool handlers. The native adapter and LiveKit development-build configuration are implemented; the first iOS build attempt failed before launch (missing WebRTC header/ExpoModulesJSI failure with Xcode 26.1.1). See docs/DEVICE_CHECKS.md and docs/VALIDATION.md. `api/session-storage.web.ts` keeps local session access per tab; native storage is memory-only until a later stage adds SecureStore. Windows/native verification remains separate.
 
 ## Coordination
 
@@ -58,4 +58,4 @@ Never mark a stage passed based solely on tests or exported bundle. Record brows
 
 Backend: 14 pytest checks pass. Frontend: typecheck, lint and static web export pass. Browser: full strict routine completes six sets; separate watch tab synchronizes Taken and summary; refresh retains a running rest; alternatives require acceptance; early end retains a partial substituted set. See docs/VALIDATION.md for exact limits. npm dependency audit remains open.
 
-Next backend-owner action: configure the ElevenLabs agent/client tools, then put credentials in ignored backend/.env and launch using README's --env-file command. Next frontend-owner action: validate Stage 2 live audio/tools, then run the native voice spike. Current local services are available at localhost:8000 and localhost:8081; restart them through README commands if unavailable.
+Next backend-owner action: configure the ElevenLabs agent/client tools, then put credentials in ignored backend/.env and launch using README's --env-file command. Next frontend-owner action: validate live web audio/tools after the team creates and configures the ElevenLabs agent, then retry the native voice spike after resolving the Xcode and LiveKit build blockers. Current local services are available at localhost:8000 and localhost:8081; restart them through README commands if unavailable.

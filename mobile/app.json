@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.hacknc.spotter"
+      "bundleIdentifier": "com.hacknc.spotter",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Spotter uses the microphone for live voice coaching with Mat."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +29,8 @@
     },
     "plugins": [
       "expo-router",
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
       [
         "expo-splash-screen",
         {

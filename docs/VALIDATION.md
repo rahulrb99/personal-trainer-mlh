@@ -33,11 +33,12 @@ Stage numbers below match MASTER_PLAN.md. PASS applies to the stated environment
 | 1.8 | Browser + automated backend | All remaining equipment taken enters blocked; explicit retry works | PASS | Browser watch Taken flow; all-taken test |
 | 1.9 | Browser + automated backend | Substitute requires acceptance and new claim; exclusions respected | PASS | Dumbbell press accepted manually; exclusion tests |
 | 1.10 | Browser + automated backend | Normal completion: six sets/three exercises. Early end: one substituted set/zero completed exercises; reload retains result | PASS | docs/evidence/web-ended-summary.jpg; ended timer test |
-| 2 web.1–2 web.7 | Browser + ElevenLabs | Integration compiles; real audio/tool conversation not tested | NOT RUN | Agent and backend credentials needed; no sponsor integration claim yet |
+| 2 web.1–2 web.7 | Browser + ElevenLabs | Web voice adapter and client tools are implemented; live microphone, speech, and tool conversation not tested | NOT RUN | Agent and backend credentials needed; `npm run typecheck`, `npm run lint`, and `npm run export:web` pass. No sponsor integration claim yet. |
 | Voice configuration error | Browser | Unconfigured voice reports failure; workout controls still work | PASS | POST /voice/token returns 503 without provider request |
-| 2 native.1–2 native.4 | iPhone simulator | Tooling available; voice spike not implemented/run | NOT RUN | Development build and native adapter remain |
-| 3.1–3.3 | Two browser tabs | Manual local pairing and Taken state synchronization work | PARTIAL | Spoken explanations not tested |
+| 2 native.1–2 native.4 | iPhone simulator | Native adapter, LiveKit dependencies, and microphone permission are implemented. `npx expo run:ios --configuration Debug` failed before app launch: LiveKit compile could not find `WebRTC/WebRTC.h`; ExpoModulesJSI build script also failed. Simulator runtime/audio checks not run. | FAIL (build) | Mac Xcode 26.1.1; Expo SDK 57 docs require Xcode 26.4+. Build output also reports CoreSimulatorService unavailable. Resolve the native toolchain/dependency build issue, then install, launch, speak, hear reply, and restart the conversation. |
+| 3.1–3.3 | Two browser tabs | Earlier walkthrough confirmed manual pairing and Taken synchronization. Client now ignores equal/older versions, fetches an authoritative snapshot before each stream connection, retries with backoff, and only reports Live after a valid stream snapshot. | PARTIAL | `npm run lint`, `npm run typecheck`, and `npm run export:web` pass. Two-tab reconnect walkthrough after this client change and spoken explanations remain to be rechecked with live voice. |
 | 3.4–3.8 | Browser + live voice | Voice concurrency, reconnection audio and two full spoken runs pending | NOT RUN | Stage 2 provider configuration first |
+| 4 prep | Mac + Expo prebuild | Native-only LiveKit WebRTC globals now register before Expo Router; web uses a platform no-op. iOS config regenerates with the microphone permission. | PASS (setup only) | `npx expo prebuild --platform ios --no-install`, `npm run lint`, `npm run typecheck`, and `npm run export:web` pass. Native compile remains blocked by Xcode 26.1.1 (Expo SDK 57 requires 26.4+) and unavailable CoreSimulatorService. |
 | 4, 5 | Native simulators | Full iPhone app and actual SwiftUI watch app not tested | NOT RUN | Browser watch panel is explicitly labeled simulation |
 | 6 | Submission | Code local; no submission/publishing performed | NOT RUN | Human publication authorization and final demo required |
 
@@ -49,7 +50,7 @@ Stage numbers below match MASTER_PLAN.md. PASS applies to the stated environment
 - `npm run export:web`: PASS; static routes `/` and `/watch` exported.
 - Contracts generated using `python3 scripts/export_contracts.py`.
 
-Dependency audit: npm reports 29 findings (18 high, 11 moderate) in Expo/toolchain transitive packages. Inspected advisories include braces, node-forge, decode-uri-component and uuid. Suggested automatic fixes change Expo/React Native major versions; no forced downgrade/upgrade applied. Resolve with compatible upstream versions before a public release. This is an open dependency check, not a clean security certification.
+Dependency audit: npm reports 30 findings (19 high, 11 moderate) after adding the Stage 2 native ElevenLabs/LiveKit dependencies. Findings are in the app/toolchain dependency tree. Suggested automatic fixes change Expo/React Native major versions; no forced downgrade/upgrade applied. Resolve with compatible upstream versions before a public release. This is an open dependency check, not a clean security certification.
 
 Physical iPhone/headphone routing, locked-phone audio, real Apple Watch pairing, native WatchConnectivity, haptics and battery: NOT RUN and outside initial acceptance scope.
 
@@ -58,6 +59,8 @@ Physical iPhone/headphone routing, locked-phone audio, real Apple Watch pairing,
 Environment: Windows, Python 3.13.3, isolated .venv installed from unchanged backend/requirements.txt: FastAPI 0.129.0, Pydantic 2.12.5, Uvicorn 0.40.0, HTTPX 0.28.1, pytest 9.0.3. No browser or native simulator run. Base URL remains http://127.0.0.1:8000. Tests use temporary SQLite and HTTPX MockTransport, with no real provider request or credentials. Mock tokens/keys are synthetic.
 
 Commands: `.venv/Scripts/python.exe scripts/export_contracts.py` PASS; `.venv/Scripts/python.exe -m pytest backend/tests -q --basetemp=.test-runs/stage2-pinned --tb=short`: **26 passed, 1 warning in 2.24s**. Warning is the installed Starlette TestClient's deprecated AnyIO BlockingPortal alias. Earlier available-system-dependency run: 26 passed in 2.48s. Approved unsandboxed execution was used because the Windows sandbox previously stalled asyncio socketpair initialization. No frontend checks were rerun or claimed.
+
+Post-pull integration check on macOS: `python3 -m pytest backend/tests -q`: **26 passed in 0.79s**, including generated tool definitions against `mobile/src/voice/voice-panel-shared.tsx`. In `mobile/`, `npm run typecheck` and `npm run lint` pass; `npm run export:web` passes with the shared voice component. These checks do not establish live ElevenLabs credentials, agent setup, or spoken audio behavior.
 
 | Stage / check | Owner | Environment | Expected | Actual | Status | Evidence / blocker |
 |---|---|---|---|---|---|---|
@@ -73,6 +76,6 @@ Commands: `.venv/Scripts/python.exe scripts/export_contracts.py` PASS; `.venv/Sc
 | 2 web.5 | Thanmay | Browser + live ElevenLabs | Mic denial/disconnect preserves session and buttons | Authorization failures tested only | NOT RUN | Actual mic/connection recovery required |
 | 2 web.6 | Thanmay | Browser + live ElevenLabs | End releases conversation/audio resources | Finished session cannot get new token | NOT RUN | Existing connection cleanup must be verified in browser |
 | 2 web.7 | Thanmay | Browser + live ElevenLabs | Two-minute idle/noise has zero transitions | No audio sample run | NOT RUN | Prompt rules are not speaker-identification evidence |
-| 2 native.1–4 | Thanmay | iPhone simulator | Launch; live mic/reply; end/restart; PASS or concrete blocker | Windows backend work only | NOT RUN | Mac development build/audio spike required |
+| 2 native.1–4 | Thanmay | iPhone simulator | Launch; live mic/reply; end/restart; PASS or concrete blocker | Build attempted; no app launch. Live mic/reply and end/restart not run. | FAIL (build) | `npx expo run:ios --configuration Debug` fails on missing `WebRTC/WebRTC.h` and ExpoModulesJSI; Xcode 26.1.1 is below Expo SDK 57's documented Xcode 26.4 minimum. See docs/DEVICE_CHECKS.md. |
 
-Stage 2 overall remains open. Private agent setup instructions are in agent/README.md. Prompt and catalog guidance are developer-authored; professional content review is not certified. No provider configuration or conversation was created, no mobile/watch files changed, and no commit/push/deployment performed.
+Stage 2 overall remains open. Private agent setup instructions are in agent/README.md. Prompt and catalog guidance are developer-authored; professional content review is not certified. No provider configuration or conversation was created. Mobile voice adapter implementation is local; live voice and simulator evidence remain pending. No commit/push/deployment was performed by this validation.
