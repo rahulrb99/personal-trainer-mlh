@@ -1,5 +1,31 @@
 # Validation record
 
+## Stage 5 native watch implementation — October 10, 2026
+
+Owner: Thanmay/macOS. Standalone SwiftUI source and shared Xcode scheme in `watch/`. Backend, agent and canonical contracts unchanged. See `watch/README.md` for reproducible build and manual pairing instructions.
+
+| Check | Actual | Status |
+|---|---|---|
+| Watch compilation | Xcode 27.0 Debug build for watchOS simulator succeeds; no Swift compiler errors | PASS |
+| Watch install/launch | Apple Watch Series 11 (46mm), watchOS 26.1; native “Join your workout” screen visible in Device Hub | PASS |
+| Phone pairing label | Updated to cover native and browser watch; lint/typecheck pass | PASS |
+| 5.1 same-session pairing | Join UI and Keychain persistence implemented; actual join not exercised | NOT RUN |
+| 5.2 Taken + phone speech | Native event path implemented; shared-phone/voice walkthrough pending | NOT RUN |
+| 5.3 Got it / Set done | Versioned events and acknowledged UI implemented; real control walkthrough pending | NOT RUN |
+| 5.4 repeated/stale requests | Pending guard, observed-version check and exact-event retry implemented; live concurrency check pending | NOT RUN |
+| 5.5 reopen/reconnect | Keychain restore and foreground refresh/backoff implemented; runtime recovery walkthrough pending | NOT RUN |
+| 5.6 optional Talk | No watch microphone or Talk control added; use phone voice controls | DEFERRED |
+| 5.7 confirmed End | Confirmation and backend summary implemented; cross-device audio cleanup pending | NOT RUN |
+| 5.8 two rehearsals | No rehearsal run | NOT RUN |
+
+**Stage 5 implementation is ready for pairing and manual acceptance; Stage 5 acceptance remains open.** The watch uses direct backend HTTP, not native WatchConnectivity. Physical pairing, Bluetooth, watch microphone and haptics are not validated. Existing Stage 4 live-workflow checks remain open independently.
+
+## Latest native build result — October 10, 2026
+
+This supersedes the earlier Xcode 26.1.1/native-build blocker entries below. Xcode 27.0 first-launch setup completed. Pinning `@livekit/react-native-webrtc` to 144.1.2 restores the WebRTC framework expected by LiveKit React Native 2.12.0 and ElevenLabs React Native 1.2.29. CocoaPods installation and the iPhone 17 Pro / iOS 26.1 Debug build passed (zero build errors/warnings). Spotter installed, launched, and rendered its setup form; after starting the local backend with `backend/.env`, the simulator fetched `/catalog` with HTTP 200. Lint, typecheck and web export passed.
+
+**Native launch: PASS. Stage 2 native voice / Stage 4 acceptance: PARTIAL.** Live audio, conversation restart, full workout flow, watch-panel synchronization and recovery scenarios still require simulator walkthroughs. See `docs/DEVICE_CHECKS.md` for exact commands and dependency rationale. No backend or agent implementation changed in this fix.
+
 ## Windows install repair and Mac handoff
 
 Node 24.11.1, npm 11.6.2. Repaired mobile/package-lock.json with npm install --package-lock-only --ignore-scripts --no-audit --no-fund: PASS; package.json unchanged. npm ci accepted the repaired lock but package downloads ended in ECONNRESET. Cached retry was stopped before completion when user requested handoff to Mac. Frontend typecheck/lint/browser/audio checks remain NOT RUN on Windows; an attempted typecheck before installation finished could not find the tsc command and is not code-quality evidence. Backend local health: HTTP 200, voice_configured true. Published agent GET: HTTP 200, Mat prompt + correct omission instruction, three attached tools, authentication enabled. No secret/token/body logged. Mac owner should run install/typecheck/lint, then Stage 2 web checks and native spike; no live audio PASS is claimed here.

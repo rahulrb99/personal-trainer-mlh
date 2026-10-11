@@ -83,3 +83,7 @@ Use the virtualenv Python equivalents on each OS. `contracts/` contains exported
 Thanmay: `mobile/`, `watch/`, native builds and demos. Teammate: `backend/`, `catalog/`, `agent/`, `contracts/`. Initial backend foundation is isolated for teammate takeover. Read `AGENTS.md` before edits.
 
 Scope excludes music, sensors, dashboard, automatic form/rep detection and physical locked-phone guarantees. Gym and coaching catalog are demo content with professional review pending.
+
+## Native Apple Watch simulator (Stage 5)
+
+The standalone SwiftUI app is in [`watch/`](watch/README.md). Build/run instructions and the existing manual session-ID/token pairing flow are documented there. On the phone use **Pair watch controls**; enter those credentials in the watch's **Join your workout** form. Watch build and join-screen launch are verified; paired workout actions, phone speech and recovery acceptance are still pending in [`docs/VALIDATION.md`](docs/VALIDATION.md).
