@@ -25,7 +25,14 @@ export const exerciseSchema = z.object({
   alternatives: z.array(z.string()), sources: z.array(guidanceSourceSchema), review_status: z.literal('professional_review_pending'),
 });
 export const exerciseInstanceSchema = exerciseSchema.extend({ instance_id: z.string(), original_exercise_id: z.string(), completed_sets: z.number().int().nonnegative(), weight_lb: z.number().int().positive().nullable() });
-export const preferencesSchema = z.object({ name: z.string(), mode: z.enum(['strict', 'alternatives']), excluded_exercise_ids: z.array(z.string()), coaching: z.enum(['quiet', 'standard', 'teach']) });
+export const trainerPersonaSchema = z.object({
+  name: z.string().min(1).max(30).default('Mat'), color: z.enum(['blue', 'mint', 'peach']).default('blue'),
+  expression: z.enum(['happy', 'calm', 'bold']).default('happy'), accessory: z.enum(['headband', 'headphones', 'none']).default('headband'),
+  motivation: z.string().max(240).default(''), remind: z.boolean().default(true),
+});
+export type TrainerPersona = z.infer<typeof trainerPersonaSchema>;
+export const defaultTrainer = trainerPersonaSchema.parse({});
+export const preferencesSchema = z.object({ name: z.string(), mode: z.enum(['strict', 'alternatives']), excluded_exercise_ids: z.array(z.string()), coaching: z.enum(['quiet', 'standard', 'teach']), trainer: trainerPersonaSchema.default(defaultTrainer) });
 export const plannedExerciseSchema = z.object({ exercise_id: z.string(), sets: z.number().int().min(1).max(5), reps: z.number().int().min(1).max(30), weight_lb: z.number().int().positive().nullable() });
 export const snapshotSchema = z.object({
   schema_version: z.literal(1), session_id: z.string(), version: z.number().int().positive(), server_time: z.string().datetime({ offset: true }),

@@ -12,6 +12,9 @@ import { Action, Catalog, PlannedExercise, Preferences, ProfileAuth, Snapshot, U
 import { useSession } from '@/hooks/use-session';
 import { colors } from '@/theme';
 import { getVolumeCautions, recommendedSetLimit, type VolumeCaution } from '@/utils/workout-volume';
+import { TrainerAvatar, TrainerPersonaEditor, motivationGreeting } from '@/components/trainer-persona';
+import { defaultTrainer, type TrainerPersona } from '@/api/schema';
+import { reminderHandled, markReminderHandled } from '@/voice/reminder-state';
 import { VoicePanel } from '@/voice/voice-panel';
 
 const phaseLabels: Record<Snapshot['phase'], string> = {
@@ -144,6 +147,11 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [endConfirm, setEndConfirm] = useState(false);
   const [showAccess, setShowAccess] = useState(false);
+  const [trainer, setTrainer] = useState<TrainerPersona>(defaultTrainer);
+  const [editingTrainer, setEditingTrainer] = useState(false);
+  const [savingTrainer, setSavingTrainer] = useState(false);
+  const [trainerError, setTrainerError] = useState<string | null>(null);
+  const [dismissedReminder, setDismissedReminder] = useState<string | null>(null);
   const [profileAuth, setProfileAuth] = useState<ProfileAuth | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
@@ -154,6 +162,7 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
   const wide = width >= 900;
   function applyProfile(next: UserProfile) {
     setProfile(next);
+    setTrainer(next.preferences.trainer);
     setName(next.name);
     setMode(next.preferences.mode);
     setCoaching(next.preferences.coaching);
@@ -216,6 +225,8 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
       setProfileAuth(null);
       setProfile(null);
       setName('');
+      setTrainer(defaultTrainer);
+      setEditingTrainer(false);
       setSelectedGroups([]);
       setPlan(null);
       setVolumeAcknowledged(false);
@@ -228,11 +239,26 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
     if (!profileAuth) return;
     const saved = await api.saveProfile(profileAuth, {
       name: name.trim() || profile?.name || 'You',
-      preferences: { name: name.trim() || profile?.name || 'You', mode, coaching, excluded_exercise_ids: [] },
+      preferences: { name: name.trim() || profile?.name || 'You', mode, coaching, trainer, excluded_exercise_ids: [] },
       muscle_group_ids: selectedGroups,
       plan: nextPlan,
     });
     setProfile(saved);
+  }
+  async function saveTrainer(next: TrainerPersona) {
+    setSavingTrainer(true); setTrainerError(null);
+    try {
+      if (profileAuth) {
+        const saved = await api.saveProfile(profileAuth, {
+          name: name.trim() || profile?.name || 'You',
+          preferences: { name: name.trim() || profile?.name || 'You', mode, coaching, trainer: next, excluded_exercise_ids: [] },
+          muscle_group_ids: selectedGroups, plan,
+        });
+        setProfile(saved);
+      }
+      setTrainer(next); setEditingTrainer(false);
+    } catch (failure) { setTrainerError(failure instanceof Error ? failure.message : 'Could not save your trainer. Try again.'); }
+    finally { setSavingTrainer(false); }
   }
   function toggleGroup(groupId: string) {
     setPlan(null);
@@ -288,6 +314,9 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
     {(error || catalogError || planError || profileError) && <View style={s.error}><Text selectable style={{ color: colors.danger }}>{error || catalogError || planError || profileError}</Text>{catalogError && <ActionButton title="Reconnect" secondary onPress={loadCatalog} />}</View>}
 
     {!watchOnly && profile && <View accessibilityLiveRegion="polite" style={s.welcome}><Text style={s.welcomeTitle}>Welcome, {profile.name.trim().split(/\s+/)[0] || 'friend'}.</Text><Text style={s.body}>{state ? 'Let’s keep your workout moving.' : 'Let’s make today’s workout yours.'}</Text></View>}
+    {!watchOnly && (profile || Platform.OS !== 'web') && !state && (editingTrainer ? <TrainerPersonaEditor value={trainer} onSave={next => void saveTrainer(next)} onCancel={() => setEditingTrainer(false)} saving={savingTrainer} error={trainerError} signedIn={!!profileAuth} /> : <View style={s.mat}><TrainerAvatar trainer={trainer} size={90} /><View style={{ flex: 1 }}><Text style={s.heading}>{trainer.name}, your trainer</Text><Paragraph>{trainer.motivation ? `Your why: “${trainer.motivation}”` : 'Give your trainer a personality and a reason to remind you why you show up.'}</Paragraph></View><ActionButton title="Customize trainer" secondary onPress={() => { setTrainerError(null); setEditingTrainer(true); }} /></View>)}
+    {!watchOnly && state && (editingTrainer ? <View style={{ gap: 12 }}><Paragraph>Changes apply to your next workout. This session keeps the trainer you started with.</Paragraph><TrainerPersonaEditor value={trainer} onSave={next => void saveTrainer(next)} onCancel={() => setEditingTrainer(false)} saving={savingTrainer} error={trainerError} signedIn={!!profileAuth} /></View> : <ActionButton title="Customize trainer for next workout" secondary onPress={() => { setTrainerError(null); setEditingTrainer(true); }} />)}
+    {!watchOnly && state && !ended && state.preferences.trainer.remind && !!state.preferences.trainer.motivation && dismissedReminder !== state.session_id && !reminderHandled(state.session_id) && <View style={s.mat}><TrainerAvatar trainer={state.preferences.trainer} size={90} /><View style={{ flex: 1 }}><Text style={s.heading}>Good to see you.</Text><Paragraph>{motivationGreeting(state.preferences.name)}</Paragraph><ActionButton title="Skip reminder" secondary onPress={() => { markReminderHandled(state.session_id); setDismissedReminder(state.session_id); }} /></View></View>}
     {!watchOnly && Platform.OS === 'web' && !profile ? <LandingScreen checking={checkingProfile} signingIn={signingIn} googleEnabled={googleEnabled} onToken={idToken => void signInWithGoogle(idToken)} /> : !state && watchOnly ? <View style={s.panel}><Text style={s.title}>Join your workout</Text><Paragraph>This browser panel stands in for watch controls. Enter session access from the trainer screen.</Paragraph><TextInput accessibilityLabel="Session ID" placeholder="Session ID" value={joinId} onChangeText={setJoinId} style={s.input} /><TextInput accessibilityLabel="Session token" placeholder="Session token" value={joinToken} secureTextEntry onChangeText={setJoinToken} style={s.input} />{joinError && <Text style={{ color: colors.danger }}>{joinError}</Text>}<ActionButton title="Join session" onPress={() => { setJoinError(null); session.join({ session_id: joinId.trim(), access_token: joinToken.trim() }).catch(e => setJoinError(e.message)); }} /></View> : !state ? plan && catalog ? <View style={s.panel}>
       <PlanEditor
         catalog={catalog}
@@ -302,26 +331,28 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
         <ActionButton title="Back to muscle selection" secondary onPress={() => { setPlan(null); setVolumeAcknowledged(false); }} />
         <ActionButton title={demo ? 'Demo rest: 5s' : 'Normal rest: 60s'} secondary onPress={() => setDemo(!demo)} />
       </View>
-      <ActionButton title={pending ? 'Starting…' : 'Approve and start workout'} disabled={pending || plan.length === 0 || (volumeCautions.length > 0 && !volumeAcknowledged)} onPress={() => void (async () => {
-        try { await persistProfile(plan); } catch (failure) { setProfileError(failure instanceof Error ? failure.message : 'Signed-in plan could not be saved.'); }
-        session.start({ name: name.trim() || 'You', mode, coaching, excluded_exercise_ids: [] }, demo, selectedGroups, plan);
+      <ActionButton title={pending ? 'Starting…' : 'Approve and start workout'} disabled={pending || editingTrainer || savingTrainer || plan.length === 0 || (volumeCautions.length > 0 && !volumeAcknowledged)} onPress={() => void (async () => {
+        try {
+          await persistProfile(plan);
+          await session.start({ name: name.trim() || 'You', mode, coaching, trainer, excluded_exercise_ids: [] }, demo, selectedGroups, plan);
+        } catch (failure) { setProfileError(failure instanceof Error ? failure.message : 'Could not save and start your workout. Try again.'); }
       })()} />
-      <Paragraph>Mat connects after approval. The machine order and settings become fixed when the workout starts.</Paragraph>
+      <Paragraph>{trainer.name}’s voice is available after approval. The machine order and settings become fixed when the workout starts.</Paragraph>
     </View> : <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-      <View style={[s.intro, wide && { flex: 1 }]}><Text style={s.hero}>Choose what{'\n'}to train today.</Text><Paragraph>Select muscle groups on the body map. Spotter recommends up to eight configured machines, then you approve every setting.</Paragraph><View style={s.mat}><Text style={s.matSymbol}>m</Text><View style={{ flex: 1 }}><Text style={s.heading}>Mat uses retrieved records.</Text><Paragraph>Guidance is source-backed demo content with professional review still pending.</Paragraph></View></View><Text style={s.small}>North gym is fictional. Confirm the actual machine placard and ask gym staff when uncertain.</Text></View>
+      <View style={[s.intro, wide && { flex: 1 }]}><Text style={s.hero}>Choose what{'\n'}to train today.</Text><Paragraph>Select muscle groups on the body map. Spotter recommends up to eight configured machines, then you approve every setting.</Paragraph><View style={s.mat}><Text style={s.matSymbol}>m</Text><View style={{ flex: 1 }}><Text style={s.heading}>{trainer.name} is in your corner.</Text><Paragraph>Guidance is source-backed demo content with professional review still pending.</Paragraph></View></View><Text style={s.small}>North gym is fictional. Confirm the actual machine placard and ask gym staff when uncertain.</Text></View>
       <View style={[s.panel, wide && { width: 560 }]}>
         <Text style={s.title}>Today’s muscles</Text>
-        <Text style={s.label}>What should Mat call you?</Text><TextInput accessibilityLabel="Your name" placeholder="Your name" maxLength={60} value={name} onChangeText={setName} style={s.input} />
+        <Text style={s.label}>What should {trainer.name} call you?</Text><TextInput accessibilityLabel="Your name" placeholder="Your name" maxLength={60} value={name} onChangeText={setName} style={s.input} />
         {!catalog ? <ActivityIndicator color={colors.blue} /> : <MuscleMap groups={catalog.muscle_groups} selected={selectedGroups} onToggle={toggleGroup} />}
         {!!bodyRegionNames.length && <View style={s.regionSummary}><Text style={s.regionSummaryTitle}>Highlighted body-map regions</Text><Text style={s.small}>{bodyRegionNames.join(' · ')}</Text></View>}
         <Text style={s.label}>When equipment is taken</Text><View style={s.optionRow}><ActionButton title="Keep my exercises" secondary={mode !== 'strict'} onPress={() => setMode('strict')} /><ActionButton title="Allow alternatives" secondary={mode !== 'alternatives'} onPress={() => setMode('alternatives')} /></View>
         <Text style={s.label}>Coaching style</Text><View style={s.optionRow}>{(['quiet', 'standard', 'teach'] as const).map(value => <ActionButton key={value} title={{ quiet: 'Quiet', standard: 'Standard', teach: 'Teach me' }[value]} secondary={coaching !== value} onPress={() => setCoaching(value)} />)}</View>
         <ActionButton title={planning ? 'Building plan…' : 'Build my workout'} disabled={!catalog || !selectedGroups.length || planning} onPress={() => void previewPlan()} />
       </View>
-    </View> : ended ? <View style={s.panel}><Text style={s.hero}>{phaseLabels[state.phase]}</Text><Paragraph>{state.preferences.name}, every completed set counts.</Paragraph><View style={s.metrics}><View><Text style={s.metric}>{setsSaved}</Text><Paragraph>sets saved</Paragraph></View><View><Text style={s.metric}>{state.completed.length}</Text><Paragraph>exercises completed</Paragraph></View></View>{allEntries.filter(e => e.completed_sets > 0).map(e => <View style={s.routine} key={e.instance_id}><View style={{ flex: 1 }}><Text style={s.heading}>{e.name}</Text><Paragraph>{e.completed_sets} of {e.sets} sets{e.weight_lb !== null ? ` · ${e.weight_lb} lb` : ''}{e.id !== e.original_exercise_id ? ' · Substituted' : ''}</Paragraph></View></View>)}{setsSaved === 0 && <Paragraph>No sets were recorded today.</Paragraph>}<Paragraph>{state.skipped.length} exercise(s) skipped. Unfinished work is not counted as complete.</Paragraph><ActionButton title="Start a new session" onPress={() => session.reset().catch(e => setJoinError(e.message))} />{session.credentials && <VoicePanel credentials={session.credentials} snapshot={state} act={session.act} />}</View> : <View style={[s.columns, wide && !watchOnly && { flexDirection: 'row' }]}>
+    </View> : ended ? <View style={s.panel}><TrainerAvatar trainer={state.preferences.trainer} celebrating={setsSaved > 0} /><Text style={s.hero}>{phaseLabels[state.phase]}</Text><Paragraph>{state.preferences.name}, every completed set counts.</Paragraph><View style={s.metrics}><View><Text style={s.metric}>{setsSaved}</Text><Paragraph>sets saved</Paragraph></View><View><Text style={s.metric}>{state.completed.length}</Text><Paragraph>exercises completed</Paragraph></View></View>{allEntries.filter(e => e.completed_sets > 0).map(e => <View style={s.routine} key={e.instance_id}><View style={{ flex: 1 }}><Text style={s.heading}>{e.name}</Text><Paragraph>{e.completed_sets} of {e.sets} sets{e.weight_lb !== null ? ` · ${e.weight_lb} lb` : ''}{e.id !== e.original_exercise_id ? ' · Substituted' : ''}</Paragraph></View></View>)}{setsSaved === 0 && <Paragraph>No sets were recorded today.</Paragraph>}<Paragraph>{state.skipped.length} exercise(s) skipped. Unfinished work is not counted as complete.</Paragraph><ActionButton title="Start a new session" onPress={() => session.reset().catch(e => setJoinError(e.message))} />{session.credentials && <VoicePanel credentials={session.credentials} snapshot={state} act={session.act} />}</View> : <View style={[s.columns, wide && !watchOnly && { flexDirection: 'row' }]}>
       <View style={[s.panel, { flex: 1 }]}><Text style={s.label}>{phaseLabels[state.phase]}</Text><Text style={s.title}>{state.current?.name || 'Your remaining exercises'}</Text><Paragraph>{state.current?.location || 'Try the deferred equipment again when you’re ready.'}</Paragraph>{state.current && <View style={s.metrics}><View><Text style={s.metric}>{state.phase === 'resting' ? `${session.restSeconds}s` : `${state.set_index}/${state.current.sets}`}</Text><Paragraph>{state.phase === 'resting' ? 'rest remaining' : 'current set'}</Paragraph></View><View><Text style={s.metric}>{state.current.reps}</Text><Paragraph>planned reps</Paragraph></View>{state.current.weight_lb !== null && <View><Text style={s.metric}>{state.current.weight_lb}</Text><Paragraph>planned lb</Paragraph></View>}</View>}
         {catalog && currentCatalogExercise && <ExerciseCatalogDetails catalog={catalog} exercise={currentCatalogExercise} />}
-        <View style={s.cue}><Text style={s.heading}>Mat’s next step</Text><Paragraph>{state.last_decision}</Paragraph></View>
+        <View style={s.cue}><Text style={s.heading}>{state.preferences.trainer.name}’s next step</Text><Paragraph>{state.last_decision}</Paragraph></View>
         {state.demo_mode && <Text style={s.small}>Demo mode · Rests shortened to 5 seconds</Text>}
         {watchOnly ? controls : <>{session.credentials && <VoicePanel credentials={session.credentials} snapshot={state} act={session.act} />}<Text style={s.label}>Phone fallback controls</Text>{controls}</>}
       </View>
@@ -356,7 +387,7 @@ const s = StyleSheet.create({
   regionSummary: { gap: 4, padding: 12, borderRadius: 12, backgroundColor: colors.paleBlue },
   regionSummaryTitle: { color: colors.ink, fontSize: 12, fontWeight: '700' },
   welcome: { gap: 6, paddingTop: 12 }, welcomeTitle: { fontSize: 30, fontWeight: '700', letterSpacing: -1, color: colors.ink },
-  mat: { flexDirection: 'row', gap: 16, alignItems: 'center', padding: 20, backgroundColor: colors.paleBlue, borderRadius: 18 }, matSymbol: { fontSize: 40, color: colors.blue, fontWeight: '800', paddingHorizontal: 10 },
+  mat: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'center', padding: 20, backgroundColor: colors.paleBlue, borderRadius: 18 }, matSymbol: { fontSize: 40, color: colors.blue, fontWeight: '800', paddingHorizontal: 10 },
   metrics: { flexDirection: 'row', gap: 50, paddingVertical: 20 }, metric: { fontSize: 54, fontWeight: '600', letterSpacing: -2, color: colors.ink, fontVariant: ['tabular-nums'] },
   cue: { padding: 20, gap: 10, backgroundColor: colors.paleBlue, borderRadius: 14 }, controls: { gap: 10 }, sidebar: { gap: 20 }, watch: { padding: 25, gap: 12, backgroundColor: '#203956', borderRadius: 32, borderWidth: 5, borderColor: '#D0DCE9' }, watchTitle: { fontSize: 24, fontWeight: '600', color: '#FFFFFF' }, watchCountdown: { color: '#FFFFFF', fontSize: 48, fontVariant: ['tabular-nums'] },
   queue: { paddingVertical: 10, gap: 3, borderBottomColor: colors.border, borderBottomWidth: 1 }, error: { padding: 18, backgroundColor: '#FBECEF', borderRadius: 12, gap: 12 }, footer: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingBottom: 12 },

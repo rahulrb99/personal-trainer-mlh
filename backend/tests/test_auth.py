@@ -77,3 +77,30 @@ def test_missing_google_configuration(tmp_path, monkeypatch):
     with TestClient(create_app(str(tmp_path / "no-google.sqlite3"))) as client:
         assert client.get("/health").json()["google_auth_configured"] is False
         assert client.post("/auth/google", json={"id_token": "valid-google-id-token-value"}).status_code == 503
+
+
+def test_trainer_persona_survives_profile_login_and_workout(google_client):
+    login = google_client.post('/auth/google', json={'id_token': 'valid-google-id-token-value'}).json()
+    headers = {'Authorization': f"Bearer {login['access_token']}"}
+    persona = {'name': 'Pip', 'color': 'mint', 'expression': 'calm', 'accessory': 'headphones',
+               'motivation': 'More energy for my day.', 'remind': True}
+    profile = login['profile']
+    assert profile['preferences']['trainer']['name'] == 'Mat'
+    update = {key: profile[key] for key in ('name', 'preferences', 'muscle_group_ids', 'plan')}
+    update['preferences']['trainer'] = persona
+    saved = google_client.put('/profile', headers=headers, json=update)
+    assert saved.status_code == 200
+    again = google_client.post('/auth/google', json={'id_token': 'valid-google-id-token-value'}).json()
+    assert again['profile']['preferences']['trainer'] == persona
+    created = google_client.post('/sessions', json={'preferences': again['profile']['preferences']})
+    assert created.status_code == 201
+    workout = created.json()
+    restored = google_client.get(f"/sessions/{workout['snapshot']['session_id']}", headers={'Authorization': f"Bearer {workout['access_token']}"})
+    assert restored.json()['preferences']['trainer'] == persona
+    assert restored.json()['version'] == 1
+
+
+@pytest.mark.parametrize('change', [{'color': 'unknown'}, {'motivation': 'x' * 241}, {'name': ''}, {'accessory': 'unknown'}])
+def test_trainer_persona_rejects_invalid_input(google_client, change):
+    response = google_client.post('/sessions', json={'preferences': {'trainer': change}})
+    assert response.status_code == 422

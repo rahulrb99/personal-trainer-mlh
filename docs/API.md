@@ -54,3 +54,10 @@ Stage 1 uses a development-only manual exchange of session ID/token from the tra
 ## Known stage boundaries
 
 SQLite backend uses one uvicorn process. WebSocket transport publishes committed snapshots by reading authoritative state, every 0.5 seconds. No native WatchConnectivity or watch mic streaming. Catalog text is developer-authored, professional review pending. Agent provisioning and live voice testing require provider configuration.
+
+
+## Trainer persona (October 11, additive schema version 1)
+
+`preferences.trainer` is accepted by profile updates and session creation and returned in profiles/snapshots. Omitted values default to `{ "name": "Mat", "color": "blue", "expression": "happy", "accessory": "headband", "motivation": "", "remind": true }`. Name is 1–30 characters; motivation is 0–240. Color: blue/mint/peach; expression: happy/calm/bold; accessory: headband/headphones/none. Existing JSON profile/session storage needs no SQL migration. The client trims name/motivation; blank names cannot be saved in the editor. Older clients may omit the field. Swift watch does not decode preferences and tolerates the additive field.
+
+The profile stores preferences for future workouts. A running session retains its creation-time persona. Reminders are presentation/voice cues, never workout events. Web stores up to 50 handled session IDs locally (no motivation text); native uses process memory consistent with its current session restoration. Cross-device exactly-once delivery is not promised.

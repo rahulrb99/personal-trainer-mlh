@@ -4,9 +4,11 @@ Updated October 11, 2026. This replaces the simulator-first plan. Implementation
 
 ## Outcome and scope
 
-Spotter is the product; Mat is the voice coach. The user sets preferences and a routine, then follows spoken guidance through exercises, sets and rests. User-reported equipment availability triggers preference-aware reordering or an approved substitution.
+Spotter is the product; Mat is the default, user-renamable voice coach. The user sets preferences and a routine, then follows spoken guidance through exercises, sets and rests. User-reported equipment availability triggers preference-aware reordering or an approved substitution.
 
 Web entry scope update (October 11): show a themed landing page with Google sign-in first. After backend verification, greet the user by first name and open muscle-first setup (or restore their saved plan/session). The developer watch route continues to use session-token pairing. Native Google sign-in remains separate unfinished work.
+
+Trainer persona scope update (October 11): users can name their trainer, customize a creature avatar (color, expression, accessory), and save a personal motivation with an opening-reminder toggle. Signed-in preferences persist in the existing profile; new sessions capture that persona. A skippable reminder appears at workout start and is requested once when voice connects. Edits during a workout apply to the next session.
 
 First deliverable: a working React Native Web experience on Mac and Windows, with live ElevenLabs voice and a simulated watch-control panel. Next deliverables: the same workout on an iPhone simulator and a small SwiftUI Apple Watch simulator app. Physical iPhone/headphone testing is optional after those pass.
 

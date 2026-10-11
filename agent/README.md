@@ -54,3 +54,10 @@ Thanmay records native spike checks 1–4 on Mac: development build launch, actu
 Troubleshooting: 401 means session access mismatch; 409 means workout finished; 503 means missing configuration; 502 means provider authorization failed. Provider bodies are suppressed. Check key permissions, private-agent ID and connectivity locally. Reconnect with a newly issued token; never cache or log it. Provider tokens authorize an agent conversation; separate backend session tokens authorize workout access. Frontend ending cleanup stops existing conversations; issuing a token is not provider-side revocation.
 
 References checked October 10, 2026: [WebRTC token](https://elevenlabs.io/docs/eleven-agents/api-reference/conversations/get-webrtc-token), [client tools and Wait for response](https://elevenlabs.io/docs/eleven-agents/customization/tools/client-tools), [dynamic variables](https://elevenlabs.io/docs/eleven-agents/customization/personalization/dynamic-variables).
+
+
+### Personalized trainer / opening motivation
+
+The existing `workout_context` now includes `preferences.trainer`. Apply the updated `agent/prompt.md` to the configured provider agent before claiming live persona support. Replace any dashboard first message that hardcodes Mat with a neutral greeting such as “Welcome back. Let’s get ready for your workout.” No new dynamic-variable configuration is needed. The app sends the display name as context and one explicit read-only opening-reminder request on the first successful connection, unless disabled/skipped/already requested. The app does not provision or publish agent changes. The live provider may still use its old Mat greeting until this team-owned setup is updated.
+
+Validation: verify the chosen name, audible motivation, no workout mutation, quiet-style brevity, skip/disabled behavior, and reconnect without repeating. A client request marker records requested speech, not proof the user heard it; interrupted speech is not automatically replayed.

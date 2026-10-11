@@ -21,11 +21,21 @@ class Action(StrEnum):
     END = "end_session"
 
 
+class TrainerPersona(StrictModel):
+    name: str = Field(default="Mat", min_length=1, max_length=30)
+    color: Literal["blue", "mint", "peach"] = "blue"
+    expression: Literal["happy", "calm", "bold"] = "happy"
+    accessory: Literal["headband", "headphones", "none"] = "headband"
+    motivation: str = Field(default="", max_length=240)
+    remind: bool = True
+
+
 class Preferences(StrictModel):
     name: str = Field(default="You", min_length=1, max_length=60)
     mode: Literal["strict", "alternatives"] = "strict"
     excluded_exercise_ids: list[str] = Field(default_factory=list, max_length=30)
     coaching: Literal["quiet", "standard", "teach"] = "standard"
+    trainer: TrainerPersona = Field(default_factory=TrainerPersona)
 
 
 class PlannedExercise(StrictModel):

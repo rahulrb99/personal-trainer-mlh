@@ -182,3 +182,20 @@ Browser walkthrough: **PASS**. Evidence: `docs/evidence/catalog-regions-wired.pn
 Commands: `npm run typecheck`: **PASS**. `npm run lint -- --no-cache`: **PASS**. `$env:NODE_OPTIONS='--max-old-space-size=4096 --max-semi-space-size=64'; npm run export:web`: **PASS** with the existing upstream Three.js CommonJS deprecation warning. `python -m pytest backend/tests -q --basetemp .tmp_pytest_catalog_ui`: **35 passed**. The first browser load correctly rejected a stale pre-change catalog held by the already-running backend; restarting the local backend loaded the current JSON and the walkthrough passed.
 
 Pre-push verification, October 11: pinned backend command .venv/Scripts/python.exe -m pytest backend/tests -q --basetemp .test-runs/pre-push-auth --tb=short PASS: 38 passed, one upstream AnyIO deprecation warning in 4.53s. Real Google browser authentication remains NOT RUN.
+
+
+## Trainer persona and motivation — October 11, 2026 (macOS)
+
+Implemented configurable name, three avatar colors/expressions/accessories, motivation text, reminder toggle, opening card/skip, speaking avatar state, completed-work celebration, and edits for future workouts. Signed-in profiles persist through the existing SQLite-backed profile API; session preferences capture the persona. Existing profiles/snapshots default to Mat. No dependency changes. Existing staged package-lock edits were preserved.
+
+- PASS: `.venv/bin/python -m pytest backend/tests -q` — 43 passed; one upstream AnyIO deprecation warning. New tests cover profile/login/session persistence and invalid persona inputs; existing legacy session payloads still pass.
+- PASS: `npm run typecheck`, `npm run lint`, `npm run export:web` in mobile. Export retains the upstream Three.js CommonJS warning.
+- PASS: `node scripts/test-reminder-state.mjs` — reconnect/reload suppression, fresh-session eligibility, corrupt history, unavailable storage fallback.
+- PASS (Chrome editor): renamed draft to Pip, selected mint/calm/headphones, entered sample motivation, observed matching avatar and reminder preview; start disabled while editing; Cancel restored Mat and discarded sample text. Sample data was not saved to the real profile. Evidence: `docs/evidence/trainer-persona-editor.png` (default editor left open after discarding the sample).
+- Local backend restarted on the existing port to load the new additive schema. No external agent deployment, commit, or push.
+- NOT RUN: native runtime, live spoken reminder/name, interrupted speech, full browser start/skip/reconnect scenario. Customized persona persistence has automated coverage. Voice request history is not audible-delivery proof. Native unsigned setup uses the current app process; signed-in web profile persistence is the supported cross-visit flow.
+- Provider handoff: apply `agent/prompt.md` and neutralize the old hardcoded Mat greeting, then perform the voice checks in `agent/README.md`. Watch ignores the additive preferences object; watch UI was not changed.
+
+- PASS (live Chrome save/reload): saved the default Mat persona with empty motivation to the existing local signed-in profile, reloaded, and observed Mat plus the unchanged Lat pulldown plan. Reopened customization for the user. No sample motivation was retained.
+
+Opening-cue tone follow-up: replaced the read-aloud script with a request to naturally paraphrase the personal note in one or two sentences, without announcing motivation or a reminder. The on-screen greeting uses conversational encouragement; voice incorporates the saved note. Live spoken wording remains NOT RUN; the provider prompt update remains pending.

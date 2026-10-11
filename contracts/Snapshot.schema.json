@@ -350,9 +350,67 @@
           ],
           "title": "Coaching",
           "type": "string"
+        },
+        "trainer": {
+          "$ref": "#/$defs/TrainerPersona"
         }
       },
       "title": "Preferences",
+      "type": "object"
+    },
+    "TrainerPersona": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "Mat",
+          "maxLength": 30,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "color": {
+          "default": "blue",
+          "enum": [
+            "blue",
+            "mint",
+            "peach"
+          ],
+          "title": "Color",
+          "type": "string"
+        },
+        "expression": {
+          "default": "happy",
+          "enum": [
+            "happy",
+            "calm",
+            "bold"
+          ],
+          "title": "Expression",
+          "type": "string"
+        },
+        "accessory": {
+          "default": "headband",
+          "enum": [
+            "headband",
+            "headphones",
+            "none"
+          ],
+          "title": "Accessory",
+          "type": "string"
+        },
+        "motivation": {
+          "default": "",
+          "maxLength": 240,
+          "title": "Motivation",
+          "type": "string"
+        },
+        "remind": {
+          "default": true,
+          "title": "Remind",
+          "type": "boolean"
+        }
+      },
+      "title": "TrainerPersona",
       "type": "object"
     }
   },

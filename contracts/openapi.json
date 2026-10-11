@@ -1043,6 +1043,9 @@
             ],
             "title": "Coaching",
             "default": "standard"
+          },
+          "trainer": {
+            "$ref": "#/components/schemas/TrainerPersona"
           }
         },
         "additionalProperties": false,
@@ -1245,6 +1248,61 @@
         ],
         "title": "Snapshot"
       },
+      "TrainerPersona": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Name",
+            "default": "Mat"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "mint",
+              "peach"
+            ],
+            "title": "Color",
+            "default": "blue"
+          },
+          "expression": {
+            "type": "string",
+            "enum": [
+              "happy",
+              "calm",
+              "bold"
+            ],
+            "title": "Expression",
+            "default": "happy"
+          },
+          "accessory": {
+            "type": "string",
+            "enum": [
+              "headband",
+              "headphones",
+              "none"
+            ],
+            "title": "Accessory",
+            "default": "headband"
+          },
+          "motivation": {
+            "type": "string",
+            "maxLength": 240,
+            "title": "Motivation",
+            "default": ""
+          },
+          "remind": {
+            "type": "boolean",
+            "title": "Remind",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TrainerPersona"
+      },
       "UserProfile": {
         "properties": {
           "user_id": {
@@ -1326,6 +1384,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",
