@@ -96,10 +96,16 @@ class Store:
         if "instance_id" in exercise and "weight_lb" not in exercise:
             exercise["weight_lb"] = None
             changed = True
+        if "instance_id" in exercise and "set_records" not in exercise:
+            exercise["set_records"] = []
+            changed = True
         return changed
 
     def hydrate_state(self, state: dict) -> bool:
         changed = False
+        if "set_started_at" not in state:
+            state["set_started_at"] = None
+            changed = True
         entries = state["queue"] + state["deferred"] + state["completed"] + state["skipped"]
         if state["current"]:
             entries.append(state["current"])

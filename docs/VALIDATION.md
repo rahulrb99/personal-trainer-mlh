@@ -1,5 +1,17 @@
 # Validation record
 
+## Persisted set timing and confirmed weight changes — October 11, 2026
+
+Owner: Windows assistant, explicit human assignment across backend/shared UI/agent/watch consumers. Equipment confirmation starts the authoritative UTC set timer; set completion stops it and stores index, start/end, elapsed seconds, planned reps and that set's weight atomically in SQLite history. Rest expiry starts the next timer at its persisted deadline. Skip/end does not invent completed work. Legacy timing remains unavailable. New weight_updated action takes exactly one absolute/increase pound value with the current target; range/increment/phase/version validation and event deduplication apply. Previous records retain their original weights.
+
+Commands on Windows, Python 3.13.3: `.venv/Scripts/python.exe scripts/export_contracts.py` PASS; `.venv/Scripts/python.exe -m pytest backend/tests -q --basetemp .test-runs/set-tracking-final --tb=short`: **51 passed**, one upstream AnyIO deprecation warning in 4.54s. New coverage: starts/stops, restart/late rest tick, recorded weights before/after increase, replay/no duplicate histories, concurrent completion/weight conflicts, phase/target/bounds/unknown weight rejection, invalid payloads, HTTP/tool parity, legacy timing and ending without completion. Approved execution outside sandbox was used for known Windows process/socket limitations.
+
+Frontend: `npm run typecheck` PASS; `npm run lint -- --no-cache` PASS; `$env:NODE_OPTIONS='--max-old-space-size=4096 --max-semi-space-size=64'; npm run export:web` PASS (existing Three.js CommonJS deprecation warning). React review checks timer cleanup, server clock offset, keyed weight drafts, runtime tool validation, accessible controls and failures. Producer, generated schemas/examples, shared web/native handler and SwiftUI projection were updated together. Schema version remains 1 with additive output fields and a new opt-in action.
+
+Browser using production export localhost:8081 and real backend localhost:8000, developer /watch route: **PASS** for equipment claim → live timer, completion → stopped timer/history (5.6s at 50 lb, 10 planned reps), conditional 5 lb suggestion, explicit button increase → 55 lb for set 2 with set 1 unchanged, reload persistence, rest expiry starting set 2, and final completion summary containing set 1 (5.6s at 50 lb) plus set 2 (44.2s at 55 lb). Evidence: `docs/evidence/set-timer-running.png`, `docs/evidence/set-history-weight-updated.png`, `docs/evidence/set-timing-summary.png`. Contract examples validate against the canonical models. This is a real button/state walkthrough, not a microphone conversation.
+
+Live ElevenLabs speech/tool actions: **NOT RUN**. Updated prompt and optional weight arguments/action enum must be applied to the published agent; local files do not publish it. Native iPhone/watch build/runtime: **NOT RUN** on Windows; Mac owner must compile/test. Conditional progression text remains pending professional review. No commit/push/provider publication performed for this change.
+
 ## Stage 5 native watch implementation — October 10, 2026
 
 Owner: Thanmay/macOS. Standalone SwiftUI source and shared Xcode scheme in `watch/`. Backend, agent and canonical contracts unchanged. See `watch/README.md` for reproducible build and manual pairing instructions.
@@ -199,3 +211,7 @@ Implemented configurable name, three avatar colors/expressions/accessories, moti
 - PASS (live Chrome save/reload): saved the default Mat persona with empty motivation to the existing local signed-in profile, reloaded, and observed Mat plus the unchanged Lat pulldown plan. Reopened customization for the user. No sample motivation was retained.
 
 Opening-cue tone follow-up: replaced the read-aloud script with a request to naturally paraphrase the personal note in one or two sentences, without announcing motivation or a reminder. The on-screen greeting uses conversational encouragement; voice incorporates the saved note. Live spoken wording remains NOT RUN; the provider prompt update remains pending.
+
+## Pull integration — October 11, 2026
+
+Merged Rahul’s `50b4437` set-timer/confirmed-weight work with local trainer-persona commits. Preserved both prompt sections, API fields, avatar/encouragement, set tracking/history, and confirmed weight actions; regenerated contracts from merged models. PASS: backend pytest (56 tests), mobile typecheck, lint, reminder-state checks, and web export. Native/live voice checks were not repeated for this merge.

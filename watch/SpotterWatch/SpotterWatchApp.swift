@@ -98,6 +98,13 @@ struct WorkoutView: View {
                 Text(exercise.name).font(.headline).accessibilityIdentifier("exerciseName")
                 Text(exercise.location).font(.caption2).foregroundStyle(.secondary)
                 Text("Set \(state.setIndex)/\(exercise.sets) · \(exercise.reps) reps").font(.subheadline)
+                if let weight = exercise.weightLb { Text("\(weight) lb").font(.caption) }
+                if let records = exercise.setRecords {
+                    ForEach(records, id: \.setIndex) { record in
+                        Text("Set \(record.setIndex) · \(record.durationSeconds.map { String(format: "%.1fs", $0) } ?? "Timing unavailable")")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
             }
             switch state.phase {
             case .awaitingEquipment:
@@ -105,6 +112,12 @@ struct WorkoutView: View {
                 action("Got it", .gotIt)
                 action("Taken", .taken)
             case .exercising:
+                if state.setStartedAt != nil {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text("Set timer · \(store.secondsInSet(at: context.date))s")
+                            .font(.title3).monospacedDigit()
+                    }
+                }
                 action("Set done", .setDone)
             case .resting:
                 TimelineView(.periodic(from: .now, by: 1)) { context in

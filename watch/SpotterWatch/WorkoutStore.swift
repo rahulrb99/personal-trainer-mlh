@@ -115,6 +115,10 @@ final class WorkoutStore: ObservableObject {
         guard let deadline = snapshot?.restDeadline else { return 0 }
         return max(0, Int(ceil(deadline.timeIntervalSince(now.addingTimeInterval(serverOffset)))))
     }
+    func secondsInSet(at now: Date) -> Int {
+        guard snapshot?.phase == .exercising, let start = snapshot?.setStartedAt else { return 0 }
+        return max(0, Int(now.addingTimeInterval(serverOffset).timeIntervalSince(start)))
+    }
     func submit(_ action: WorkoutAction, expectedVersion: Int? = nil) async {
         guard actionsEnabled, let state = snapshot, action.allowed(in: state) else { return }
         if let expectedVersion, expectedVersion != state.version {

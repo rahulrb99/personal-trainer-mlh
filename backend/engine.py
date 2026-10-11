@@ -66,6 +66,7 @@ def exercise_instance(exercise: dict, *, sets: int | None = None, reps: int | No
         "instance_id": str(uuid4()),
         "original_exercise_id": exercise["id"],
         "completed_sets": 0,
+        "set_records": [],
     }
 
 
@@ -121,13 +122,14 @@ def new_session(request: CreateSession, catalog: dict, now: datetime) -> dict:
         "server_time": stamp(now), "created_at": stamp(now), "ended_at": None,
         "phase": "awaiting_equipment", "preferences": request.preferences.model_dump(),
         "demo_mode": request.demo_mode, "current": current, "set_index": 1,
-        "rest_deadline": None, "queue": queue, "deferred": [], "completed": [], "skipped": [],
+        "rest_deadline": None, "set_started_at": None, "queue": queue, "deferred": [], "completed": [], "skipped": [],
         "pending_alternative": None, "last_decision": f"Start with {current['name']}. Confirm when you have the equipment.",
     }
 
 
 def next_exercise(state: dict) -> None:
     state["rest_deadline"] = None
+    state["set_started_at"] = None
     state["pending_alternative"] = None
     state["set_index"] = 1
     if state["queue"]:
@@ -151,6 +153,8 @@ def expire_rest(state: dict, now: datetime) -> bool:
     if datetime.fromisoformat(state["rest_deadline"]) > now:
         return False
     state["phase"] = "exercising"
+    # Start at the persisted deadline, even if the restart/timer check is late.
+    state["set_started_at"] = state["rest_deadline"]
     state["rest_deadline"] = None
     state["version"] += 1
     state["server_time"] = stamp(now)
@@ -170,6 +174,7 @@ def transition(original: dict, event: Event, catalog: dict, now: datetime) -> di
     if event.type == Action.END:
         state["phase"] = "ended"
         state["rest_deadline"] = None
+        state["set_started_at"] = None
         state["pending_alternative"] = None
         state["ended_at"] = stamp(now)
         state["last_decision"] = "Session ended. Completed work has been saved."
@@ -183,10 +188,18 @@ def transition(original: dict, event: Event, catalog: dict, now: datetime) -> di
         if state["phase"] != "awaiting_equipment":
             raise TransitionError("Equipment confirmation is not currently expected")
         state["phase"] = "exercising"
-        state["last_decision"] = f"Equipment confirmed. {current['setup']} {current['cue']}"
+        state["set_started_at"] = stamp(now)
+        state["last_decision"] = f"Okay, machine found. Your set timer has started. {current['setup']} {current['cue']}"
     elif event.type == Action.COMPLETE:
         if state["phase"] != "exercising" or event.set_index != state["set_index"]:
             raise TransitionError("This set cannot be completed in the current phase")
+        started = state.get("set_started_at")
+        current.setdefault("set_records", []).append({
+            "set_index": state["set_index"], "started_at": started, "completed_at": stamp(now),
+            "duration_seconds": max(0.0, (now - datetime.fromisoformat(started)).total_seconds()) if started else None,
+            "planned_reps": current["reps"], "weight_lb": current["weight_lb"],
+        })
+        state["set_started_at"] = None
         current["completed_sets"] += 1
         if current["completed_sets"] >= current["sets"]:
             state["completed"].append(current)
@@ -197,6 +210,30 @@ def transition(original: dict, event: Event, catalog: dict, now: datetime) -> di
             seconds = 5 if state["demo_mode"] else current["rest_seconds"]
             state["rest_deadline"] = stamp(now + timedelta(seconds=seconds))
             state["last_decision"] = f"Set saved. Rest for {seconds} seconds."
+            weight = current["weight_lb"]
+            step = current["weight_step_lb"]
+            if weight is not None and step <= weight * 0.1 and weight + step <= current["weight_max_lb"]:
+                state["last_decision"] += (
+                    f" If those {current['reps']} planned reps at {weight} lb were comfortable and controlled,"
+                    f" consider increasing by {step} lb to {weight + step} lb for the next set."
+                    " Keep the same weight if unsure. Would you like to change it?"
+                )
+            elif weight is None:
+                state["last_decision"] += " What weight are you using? Tell me before changing the next set's weight."
+            else:
+                state["last_decision"] += " Keep the same weight for the next set; ask a qualified trainer before making a larger increase."
+    elif event.type == Action.WEIGHT:
+        if state["phase"] not in {"resting", "exercising"} or event.set_index != state["set_index"]:
+            raise TransitionError("Weight changes must target the current upcoming or active set")
+        weight = event.payload.get("weight_lb")
+        if weight is None:
+            if current["weight_lb"] is None:
+                raise TransitionError("Current weight is unknown. Tell Mat the new total weight in pounds")
+            weight = current["weight_lb"] + event.payload["weight_increase_lb"]
+        if weight < current["weight_min_lb"] or weight > current["weight_max_lb"] or weight % current["weight_step_lb"] != 0:
+            raise TransitionError("Weight must match this machine's configured range and increment")
+        current["weight_lb"] = weight
+        state["last_decision"] = f"Weight updated to {weight} lb for set {state['set_index']} of {current['name']}."
     elif event.type == Action.SKIP:
         state["skipped"].append(current)
         next_exercise(state)
@@ -225,6 +262,7 @@ def transition(original: dict, event: Event, catalog: dict, now: datetime) -> di
                 "instance_id": str(uuid4()),
                 "original_exercise_id": current["original_exercise_id"],
                 "completed_sets": 0,
+                "set_records": [],
             }
             state["pending_alternative"] = None
             state["phase"] = "awaiting_equipment"

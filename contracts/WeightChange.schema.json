@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "weight_lb": {
+      "anyOf": [
+        {
+          "maximum": 500,
+          "minimum": 5,
+          "multipleOf": 5,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Weight Lb"
+    },
+    "weight_increase_lb": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 500,
+          "multipleOf": 5,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Weight Increase Lb"
+    }
+  },
+  "title": "WeightChange",
+  "type": "object"
+}

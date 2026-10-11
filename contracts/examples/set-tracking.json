@@ -1,0 +1,36 @@
+{
+  "equipment_found_event": {
+    "event_id": "00000000-0000-4000-8000-000000000001",
+    "expected_version": 1,
+    "source": "voice",
+    "type": "equipment_claimed",
+    "exercise_instance_id": "example-exercise-instance",
+    "set_index": 1,
+    "payload": {}
+  },
+  "completed_set_record": {
+    "set_index": 1,
+    "started_at": "2026-10-11T12:00:00+00:00",
+    "completed_at": "2026-10-11T12:00:32.500000+00:00",
+    "duration_seconds": 32.5,
+    "planned_reps": 10,
+    "weight_lb": 50
+  },
+  "weight_increase_event": {
+    "event_id": "00000000-0000-4000-8000-000000000002",
+    "expected_version": 3,
+    "source": "voice",
+    "type": "weight_updated",
+    "exercise_instance_id": "example-exercise-instance",
+    "set_index": 2,
+    "payload": {
+      "weight_increase_lb": 5
+    }
+  },
+  "absolute_weight_tool_arguments": {
+    "action": "weight_updated",
+    "exercise_instance_id": "example-exercise-instance",
+    "set_index": 2,
+    "weight_lb": 55
+  }
+}

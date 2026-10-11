@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { z } from 'zod';
-import { Action, Credentials, PlannedExercise, Preferences, ProfileAuth, Snapshot, authResultSchema, catalogSchema, createResultSchema, eventResultSchema, healthSchema, planPreviewSchema, snapshotSchema, summarySchema, userProfileSchema } from './schema';
+import { Action, Credentials, PlannedExercise, Preferences, ProfileAuth, Snapshot, WeightChange, authResultSchema, catalogSchema, createResultSchema, eventResultSchema, healthSchema, planPreviewSchema, snapshotSchema, summarySchema, userProfileSchema } from './schema';
 
 export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 export class ApiError extends Error {
@@ -39,9 +39,9 @@ export const api = {
   }),
   snapshot: (c: Credentials) => request(`/sessions/${c.session_id}`, snapshotSchema, c),
   summary: (c: Credentials) => request(`/sessions/${c.session_id}/summary`, summarySchema, c),
-  event: (c: Credentials, snapshot: Snapshot, type: Action, source: 'web' | 'watch' | 'voice' = 'web') => request(`/sessions/${c.session_id}/events`, eventResultSchema, c, {
+  event: (c: Credentials, snapshot: Snapshot, type: Action, source: 'web' | 'watch' | 'voice' = 'web', payload?: WeightChange) => request(`/sessions/${c.session_id}/events`, eventResultSchema, c, {
     event_id: Crypto.randomUUID(), expected_version: snapshot.version, source, type,
-    exercise_instance_id: snapshot.current?.instance_id ?? null, set_index: snapshot.set_index, payload: {},
+    exercise_instance_id: snapshot.current?.instance_id ?? null, set_index: snapshot.set_index, payload: payload ?? {},
   }),
   voiceToken: (c: Credentials) => request('/voice/token', z.object({ conversation_token: z.string() }), c, { session_id: c.session_id }),
 };
