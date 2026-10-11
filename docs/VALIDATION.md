@@ -36,8 +36,8 @@ Stage numbers below match MASTER_PLAN.md. PASS applies to the stated environment
 | 2 web.1–2 web.7 | Browser + ElevenLabs | Web voice adapter and client tools are implemented; live microphone, speech, and tool conversation not tested | NOT RUN | Agent and backend credentials needed; `npm run typecheck`, `npm run lint`, and `npm run export:web` pass. No sponsor integration claim yet. |
 | Voice configuration error | Browser | Unconfigured voice reports failure; workout controls still work | PASS | POST /voice/token returns 503 without provider request |
 | 2 native.1–2 native.4 | iPhone simulator | Native adapter, LiveKit dependencies, and microphone permission are implemented. `npx expo run:ios --configuration Debug` failed before app launch: LiveKit compile could not find `WebRTC/WebRTC.h`; ExpoModulesJSI build script also failed. Simulator runtime/audio checks not run. | FAIL (build) | Mac Xcode 26.1.1; Expo SDK 57 docs require Xcode 26.4+. Build output also reports CoreSimulatorService unavailable. Resolve the native toolchain/dependency build issue, then install, launch, speak, hear reply, and restart the conversation. |
-| 3.1–3.3 | Two browser tabs | Earlier walkthrough confirmed manual pairing and Taken synchronization. Client now ignores equal/older versions, fetches an authoritative snapshot before each stream connection, retries with backoff, and only reports Live after a valid stream snapshot. | PARTIAL | `npm run lint`, `npm run typecheck`, and `npm run export:web` pass. Two-tab reconnect walkthrough after this client change and spoken explanations remain to be rechecked with live voice. |
-| 3.4–3.8 | Browser + live voice | Voice concurrency, reconnection audio and two full spoken runs pending | NOT RUN | Stage 2 provider configuration first |
+| 3.1–3.3 | Windows browser, two tabs + live agent | Separate watch Taken/Got it synchronized both tabs; agent generated the correct external-action explanation | PARTIAL | State synchronization passed. Automated run observed response text and Speaking status but did not independently verify audible output. |
+| 3.4–3.8 | Windows browser + live agent | Two-control race advanced once; watch hard reload recovered set 2/2; voice disconnect/reconnect retained state; one 6-set routine completed | PARTIAL | Spoken question, voice-vs-control race, audible-output confirmation and second full spoken run remain. See detailed Stage 3 section below. |
 | 4 prep | Mac + Expo prebuild | Native-only LiveKit WebRTC globals now register before Expo Router; web uses a platform no-op. iOS config regenerates with the microphone permission. | PASS (setup only) | `npx expo prebuild --platform ios --no-install`, `npm run lint`, `npm run typecheck`, and `npm run export:web` pass. Native compile remains blocked by Xcode 26.1.1 (Expo SDK 57 requires 26.4+) and unavailable CoreSimulatorService. |
 | 4, 5 | Native simulators | Full iPhone app and actual SwiftUI watch app not tested | NOT RUN | Browser watch panel is explicitly labeled simulation |
 | 6 | Submission | Code local; no submission/publishing performed | NOT RUN | Human publication authorization and final demo required |
@@ -79,3 +79,62 @@ Post-pull integration check on macOS: `python3 -m pytest backend/tests -q`: **26
 | 2 native.1–4 | Thanmay | iPhone simulator | Launch; live mic/reply; end/restart; PASS or concrete blocker | Build attempted; no app launch. Live mic/reply and end/restart not run. | FAIL (build) | `npx expo run:ios --configuration Debug` fails on missing `WebRTC/WebRTC.h` and ExpoModulesJSI; Xcode 26.1.1 is below Expo SDK 57's documented Xcode 26.4 minimum. See docs/DEVICE_CHECKS.md. |
 
 Stage 2 overall remains open. Private agent setup instructions are in agent/README.md. Prompt and catalog guidance are developer-authored; professional content review is not certified. No provider configuration or conversation was created. Mobile voice adapter implementation is local; live voice and simulator evidence remain pending. No commit/push/deployment was performed by this validation.
+
+## Stage 3 Windows backend — October 10, 2026
+
+WebSocket authorization, snapshot and pong frames now have exported Pydantic contracts. Automated checks verify the initial snapshot, a watch-sourced accepted event and acknowledgment, duplicate replay acknowledgment, external-action broadcast, reconnect to the authoritative latest version, ping/pong, and close code 1008 for invalid authorization. Command: `.venv\Scripts\python.exe -m pytest backend/tests -q --basetemp=.test-runs/stage3 --tb=short`: **31 passed, 1 upstream warning in 2.57s**. A Windows browser walkthrough was attempted; `npm run web` could not start because the interrupted frontend installation left the local Expo executable unavailable.
+
+This completes the backend-owned Stage 3 transport hardening. Browser results recorded below supersede the earlier browser-pending note.
+
+## Stage 3 Windows browser — October 10, 2026
+
+Environment: Windows, Expo web at `http://localhost:8081`, backend at `http://127.0.0.1:8000`, live configured ElevenLabs agent, two browser tabs. Session credentials are intentionally omitted.
+
+| Check | Actual | Status | Evidence / limitation |
+|---|---|---|---|
+| 3.1 | Trainer and separate watch tab joined one live session. Taken in the watch moved both tabs from Chest press to Seated row. | PASS | Both tabs showed Live and the same next exercise/decision. |
+| 3.2 | The agent connected and produced the correct Seated row explanation after an external Got it action; UI changed through Speaking to Listening. | PARTIAL | Response text and speaking status verified, but this automated run did not independently verify audible output. |
+| 3.3 | Got it in the watch moved both tabs to Seated row set 1 with matching state. | PASS | Trainer received the committed snapshot and agent explanation. |
+| 3.4 | Near-simultaneous Set done clicks in trainer and watch saved only one set; after rest both showed set 2/2. | PARTIAL | Two-control race passed; the competing action was not spoken voice. Automated backend concurrency coverage also passes. |
+| 3.5 | Hard-reloaded the watch route; it restored credentials, fetched current state and displayed Live at set 2/2. | PASS | No stale command or old cue replay was observed. |
+| 3.6 | Disconnected and reconnected live voice at set 2/2; workout state remained intact and connection returned to Listening. | PASS | No false workout advancement occurred. Backend-stop recovery was not separately exercised. |
+| 3.7 | Mute listening changed to Talk to Mat and reconnect restored Listening. | PARTIAL | Actual spoken question/reply and timed listening-window closure require manual microphone input. |
+| 3.8 | Completed one full strict routine with one Taken report, deferred retry, rests and normal ending: 6 sets, 3 exercises, 0 skipped. | PARTIAL | `docs/evidence/stage3-windows-summary.png`. A spoken question and second complete spoken run remain required. |
+
+Stage 3 remains **PARTIAL**. Required manual remainder: verify audible external-action speech, ask and receive one microphone question, run voice-vs-control concurrency, and complete the scenario a second time.
+
+## Muscle-first workout builder — October 10, 2026
+
+Explicit scope change after the original staged demo: the fictional gym now contains 18 source-backed machines and ten selectable muscle groups. Setup supports deterministic plan preview, remove/add/approved replacement, editable sets/reps and an optional pound slider. Guidance remains `professional_review_pending`.
+
+Automated backend command: `.venv\Scripts\python.exe -m pytest backend/tests -q --basetemp=.test-runs/muscle-builder --tb=short`: **35 passed, 1 upstream warning in 2.89s**. Coverage includes catalog/source integrity, recommendation balance/cap/de-duplication, custom-plan validation, settings bounds, replacement weight reset and all prior session/voice/stream regressions. Contract export, mobile typecheck and lint pass. Browser walkthrough is recorded separately after the implementation checks below.
+
+Final verification: contract export PASS; backend **35 passed, 1 upstream warning in 4.94s**; `npm run typecheck`, `npm run lint` and `npm run export:web` PASS. Windows browser walkthrough selected Chest and Back, verified both front/back regions turned red, received the expected four-machine preview, removed Pec deck, replaced Chest press with Pec deck, changed it to 3 sets × 11 reps at 90 lb, approved the plan and reached a live authoritative session showing Pec deck at Floor 1 · Push zone with exactly those settings. Status: **PASS (Windows web)**. Evidence: `docs/evidence/muscle-builder-selected.png`, `docs/evidence/muscle-builder-approved.png`.
+
+## Interactive 3D muscle model — October 10, 2026
+
+Environment: Windows, Expo SDK 57.0.27, React 19.2.3, React Three Fiber 9.8.1, Three.js 0.186.1, browser app at `http://localhost:8081`.
+
+| Check | Actual | Status | Evidence / limitation |
+|---|---|---|---|
+| Licensed asset integrity | Bundled GLB is 8,819,872 bytes; SHA-256 matches `5234472152a791baf002bed614707c33ba3ab2b278e41f41899a79a453d40785`. BodyParts3D/Z-Anatomy attribution, upstream license, and Draco notice are preserved. | PASS | `mobile/public/models/`; `mobile/public/draco/` |
+| Web load and rotation | Draco-compressed anatomy loaded from the local app. Screenshots several seconds apart showed changed orientation. | PASS | `docs/evidence/interactive-3d-loaded.png` |
+| Mesh selection and highlighting | A direct torso mesh click selected Core; labeled button state changed to Remove Core. Selected surfaces render bright red while non-selected anatomy uses a dimmed cool-gray palette, so deeper mapped muscles remain visible without red-on-red ambiguity. | PASS | Browser accessibility state; `docs/evidence/interactive-3d-centered-contrast.png` |
+| Manual orbit and resumed rotation | The source annotation is excluded from body bounds. Horizontal canvas drag changed orientation around a vertical axis through the centered body; automatic rotation resumed. Pitch, pan, and zoom are disabled. | PASS | `docs/evidence/interactive-3d-centered-contrast.png` |
+| Accessible/native fallback | Ten labeled toggle buttons remained operable alongside WebGL. Platform resolution retains the SVG schematic on native; model error boundary renders the same schematic on web failure. | PASS (web/source) | Native runtime itself NOT RUN on Windows |
+| Volume threshold | A Back plan at exactly six sets showed no caution. Raising it to seven showed Back: 7 sets and Biceps: 7 sets, confirming primary and secondary counting. | PASS | `docs/evidence/interactive-3d-volume-caution.png` |
+| Acknowledgment gate/reset | Approval was disabled at seven sets, enabled after checking the caution, then disabled and unchecked after changing reps while volume remained high. | PASS | Browser accessibility state |
+
+Commands: `.venv\Scripts\python.exe -m pytest backend/tests -q --basetemp=.test-runs/interactive-3d --tb=short`: **35 passed, 1 upstream warning in 3.93s**. `npm run typecheck`: PASS. `npm run lint`: PASS. `$env:NODE_OPTIONS='--max-old-space-size=4096'; npm run export:web`: PASS; `/`, `/watch`, `/_sitemap`, and `/+not-found` exported. The final export reports Three.js's upstream CommonJS deprecation warning but no build failure.
+
+WebGL resilience follow-up, October 11: a browser context-allocation failure was reproduced after several concurrent 3D tabs and memory pressure. The model now preflights WebGL, requests a low-power context with antialiasing disabled, renders at device-pixel ratio 1, and falls back to a user-selectable 2D map instead of mounting the WebGL canvas when no context is available. Browser validation switched from 3D to the lightweight map and selected Chest successfully; switching does not change workout selection. `npm run typecheck`, targeted Expo lint, and web export pass. The bundled Draco GLB remains 8,819,872 bytes; a materially smaller 3D runtime would require a separately reviewed decimated asset.
+
+## Enriched catalog UI — October 11, 2026
+
+Environment: Windows, Expo SDK 57.0.27, React Native Web 0.21.0, browser app at `http://localhost:8081`, backend at `http://127.0.0.1:8000`.
+
+The client now validates and consumes `body_regions`, `equipment_catalog`, and `exercise_metadata`. Selecting Chest and Back displayed the normalized region names and highlighted both muscle groups. The generated four-machine plan displayed movement pattern, explicit unknown difficulty, equipment type, normalized floor/zone, unknown manufacturer/model, and the configured weight range/increment. Expanding Chest press rendered preserved setup, execution cue, mistakes, troubleshooting, stop conditions, source titles/plain URLs, and the pending-review warning. After plan approval, the active Chest press screen retained the catalog-derived machine summary and guide control.
+
+Browser walkthrough: **PASS**. Evidence: `docs/evidence/catalog-regions-wired.png`, `docs/evidence/catalog-machine-guide-wired.png`, `docs/evidence/catalog-active-workout-wired.png`.
+
+Commands: `npm run typecheck`: **PASS**. `npm run lint -- --no-cache`: **PASS**. `$env:NODE_OPTIONS='--max-old-space-size=4096 --max-semi-space-size=64'; npm run export:web`: **PASS** with the existing upstream Three.js CommonJS deprecation warning. `python -m pytest backend/tests -q --basetemp .tmp_pytest_catalog_ui`: **35 passed**. The first browser load correctly rejected a stale pre-change catalog held by the already-running backend; restarting the local backend loaded the current JSON and the walkthrough passed.

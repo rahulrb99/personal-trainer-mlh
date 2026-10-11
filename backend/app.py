@@ -10,12 +10,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from backend.models import CreateResult, CreateSession, Event, EventResult, Snapshot
+from backend.models import (
+    CreateResult,
+    CreateSession,
+    Event,
+    EventResult,
+    PlanPreview,
+    PlanRequest,
+    PongFrame,
+    Snapshot,
+    SnapshotFrame,
+    StreamAuthorization,
+)
+from backend.engine import TransitionError, preview_plan
 from backend.store import Store, StoreError
 from backend.voice import VoiceAuthorization, VoiceRequest, authorize_voice, voice_configured
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG = json.loads((ROOT / "catalog/demo.json").read_text())
+CATALOG = json.loads((ROOT / "catalog/demo.json").read_text(encoding="utf-8"))
 security = HTTPBearer(auto_error=False)
 
 
@@ -59,6 +71,13 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
     def catalog():
         return CATALOG
 
+    @app.post("/plans/preview", response_model=PlanPreview)
+    def plan_preview(request: PlanRequest):
+        try:
+            return preview_plan(request, CATALOG)
+        except TransitionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.post("/sessions", status_code=201, response_model=CreateResult)
     def create(request: CreateSession):
         return store.create(request)
@@ -79,20 +98,20 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
     async def stream(websocket: WebSocket, session_id: str):
         await websocket.accept()
         try:
-            auth = await asyncio.wait_for(websocket.receive_json(), timeout=5)
-            token = auth.get("access_token", "") if isinstance(auth, dict) else ""
-            if not isinstance(token, str):
-                token = ""
+            auth = StreamAuthorization.model_validate(
+                await asyncio.wait_for(websocket.receive_json(), timeout=5)
+            )
             version = 0
             while True:
-                state = await asyncio.to_thread(store.get, session_id, token)
+                state = await asyncio.to_thread(store.get, session_id, auth.access_token)
                 if state["version"] > version:
-                    await websocket.send_json({"type": "snapshot", "snapshot": state})
+                    frame = SnapshotFrame(snapshot=Snapshot.model_validate(state))
+                    await websocket.send_json(frame.model_dump(mode="json"))
                     version = state["version"]
                 try:
                     message = await asyncio.wait_for(websocket.receive_text(), timeout=0.5)
                     if message == "ping":
-                        await websocket.send_json({"type": "pong"})
+                        await websocket.send_json(PongFrame().model_dump(mode="json"))
                 except asyncio.TimeoutError:
                     pass
         except (WebSocketDisconnect, RuntimeError):

@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from backend.models import Action, CreateSession, Event
+from backend.models import Action, CreateSession, Event, PlanRequest
 
 
 def utc_now() -> datetime:
@@ -18,18 +18,101 @@ class TransitionError(Exception):
     pass
 
 
+def preview_plan(request: PlanRequest, catalog: dict) -> dict:
+    groups = {group["id"] for group in catalog["muscle_groups"]}
+    unknown = set(request.muscle_group_ids) - groups
+    if unknown:
+        raise TransitionError(f"Unknown muscle group: {sorted(unknown)[0]}")
+
+    candidates: dict[str, list[dict]] = {}
+    for group_id in request.muscle_group_ids:
+        primary = [exercise for exercise in catalog["exercises"] if exercise["primary_muscle_group"] == group_id]
+        secondary = [
+            exercise for exercise in catalog["exercises"]
+            if group_id in exercise["secondary_muscle_groups"] and exercise not in primary
+        ]
+        candidates[group_id] = primary + secondary
+
+    chosen: list[dict] = []
+    chosen_ids: set[str] = set()
+    cursors = {group_id: 0 for group_id in request.muscle_group_ids}
+    for _ in range(2):
+        for group_id in request.muscle_group_ids:
+            options = candidates[group_id]
+            while cursors[group_id] < len(options) and options[cursors[group_id]]["id"] in chosen_ids:
+                cursors[group_id] += 1
+            if cursors[group_id] >= len(options):
+                continue
+            exercise = options[cursors[group_id]]
+            cursors[group_id] += 1
+            chosen_ids.add(exercise["id"])
+            chosen.append({
+                "exercise_id": exercise["id"],
+                "sets": exercise["sets"],
+                "reps": exercise["reps"],
+                "weight_lb": None,
+            })
+            if len(chosen) == 8:
+                return {"muscle_group_ids": request.muscle_group_ids, "plan": chosen}
+    return {"muscle_group_ids": request.muscle_group_ids, "plan": chosen}
+
+
+def exercise_instance(exercise: dict, *, sets: int | None = None, reps: int | None = None, weight_lb: int | None = None) -> dict:
+    return {
+        **deepcopy(exercise),
+        "sets": sets if sets is not None else exercise["sets"],
+        "reps": reps if reps is not None else exercise["reps"],
+        "weight_lb": weight_lb,
+        "instance_id": str(uuid4()),
+        "original_exercise_id": exercise["id"],
+        "completed_sets": 0,
+    }
+
+
 def new_session(request: CreateSession, catalog: dict, now: datetime) -> dict:
     routine = next((r for r in catalog["routines"] if r["id"] == request.routine_id), None)
     if not routine:
         raise TransitionError("Unknown routine")
     exercises = {e["id"]: e for e in catalog["exercises"]}
+    groups = {group["id"] for group in catalog["muscle_groups"]}
     excluded = set(request.preferences.excluded_exercise_ids)
     if excluded - exercises.keys():
         raise TransitionError("Unknown excluded exercise")
-    queue = []
-    for exercise_id in routine["exercise_ids"]:
-        if exercise_id not in excluded:
-            queue.append({**deepcopy(exercises[exercise_id]), "instance_id": str(uuid4()), "original_exercise_id": exercise_id, "completed_sets": 0})
+
+    queue: list[dict] = []
+    if request.plan is not None:
+        selected = set(request.selected_muscle_group_ids)
+        unknown_groups = selected - groups
+        if unknown_groups:
+            raise TransitionError(f"Unknown muscle group: {sorted(unknown_groups)[0]}")
+        plan_ids = [item.exercise_id for item in request.plan]
+        if len(plan_ids) != len(set(plan_ids)):
+            raise TransitionError("A customized plan cannot repeat a machine")
+        for item in request.plan:
+            exercise = exercises.get(item.exercise_id)
+            if not exercise:
+                raise TransitionError("Customized plan contains an unknown exercise")
+            if item.exercise_id in excluded:
+                raise TransitionError("Customized plan contains an excluded exercise")
+            exercise_groups = {exercise["primary_muscle_group"], *exercise["secondary_muscle_groups"]}
+            if selected.isdisjoint(exercise_groups):
+                raise TransitionError("Customized exercise does not train a selected muscle group")
+            if item.weight_lb is not None and (
+                item.weight_lb < exercise["weight_min_lb"]
+                or item.weight_lb > exercise["weight_max_lb"]
+                or item.weight_lb % exercise["weight_step_lb"] != 0
+            ):
+                raise TransitionError("Selected weight is outside this machine's configured range")
+            queue.append(exercise_instance(
+                exercise,
+                sets=item.sets,
+                reps=item.reps,
+                weight_lb=item.weight_lb,
+            ))
+    else:
+        for exercise_id in routine["exercise_ids"]:
+            if exercise_id not in excluded:
+                queue.append(exercise_instance(exercises[exercise_id]))
     if not queue:
         raise TransitionError("Preferences exclude every exercise in this routine")
     current = queue.pop(0)
@@ -136,7 +219,13 @@ def transition(original: dict, event: Event, catalog: dict, now: datetime) -> di
             raise TransitionError("There is no pending alternative")
         if event.type == Action.ACCEPT:
             replacement = state["pending_alternative"]
-            state["current"] = {**replacement, "instance_id": str(uuid4()), "original_exercise_id": current["original_exercise_id"], "completed_sets": 0}
+            state["current"] = {
+                **replacement,
+                "weight_lb": None,
+                "instance_id": str(uuid4()),
+                "original_exercise_id": current["original_exercise_id"],
+                "completed_sets": 0,
+            }
             state["pending_alternative"] = None
             state["phase"] = "awaiting_equipment"
             state["last_decision"] = f"Alternative accepted. Confirm when you have the equipment for {replacement['name']}. Choose a suitable weight independently."

@@ -1,0 +1,11 @@
+Draco decoder runtime
+
+Copyright 2017 Google Inc.
+Licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+
+These decoder files are redistributed unchanged from Three.js 0.186.1:
+https://unpkg.com/three@0.186.1/examples/jsm/libs/draco/gltf/
+
+Three.js is Copyright © 2010-2026 three.js authors and is licensed under the
+MIT License: https://github.com/mrdoob/three.js/blob/r186/LICENSE

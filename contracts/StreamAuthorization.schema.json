@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "access_token": {
+      "minLength": 1,
+      "title": "Access Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "access_token"
+  ],
+  "title": "StreamAuthorization",
+  "type": "object"
+}

@@ -2,7 +2,7 @@
 
 A voice-guided gym companion that follows your plan and adapts when equipment is reported taken. Web first, then iPhone and Apple Watch simulators.
 
-Current implementation: shared Expo/React Native Web screens, FastAPI/SQLite workout engine, three-exercise demo catalog, browser watch panel, and web/native ElevenLabs voice adapters. Stage 2 live voice configuration is pending; the native simulator build is currently blocked. The SwiftUI watch app remains a later stage. See `docs/VALIDATION.md` for actual check results.
+Current implementation: shared Expo/React Native Web screens, FastAPI/SQLite workout engine, a source-backed fictional catalog of 18 machines, a muscle-first editable workout builder with a rotating web anatomy model, browser watch panel, and web/native ElevenLabs voice adapters. Machine guidance is developer-paraphrased with professional review pending. The native simulator build is currently blocked, and the SwiftUI watch app remains a later stage. See `docs/VALIDATION.md` for actual check results.
 
 ## Requirements
 
@@ -41,6 +41,10 @@ npm run web
 ```
 
 Open http://localhost:8081. Default API is http://localhost:8000. Copy `mobile/.env.example` to `mobile/.env` to change it; restart Expo when changing public environment configuration.
+
+On web, click the rotating anatomical model or its labeled accessible buttons to select muscle groups; selected mapped muscles turn red. Drag rotates and the automatic rotation resumes afterward. Native and failed-WebGL paths retain the front/back schematic and labeled buttons. Model attribution and license notices are under `mobile/public/models/`.
+
+Plans above six sets for any primary or secondary muscle display a non-diagnostic fatigue caution. The user may continue only after acknowledging it, and any subsequent plan edit resets that acknowledgment.
 
 Start a session. Got it confirms equipment, Taken defers or offers an approved alternative, Set done saves a set. Rest ends automatically. Demo mode is visibly labeled and shortens rests to five seconds.
 

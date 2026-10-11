@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "exercise_id": {
+      "minLength": 1,
+      "title": "Exercise Id",
+      "type": "string"
+    },
+    "sets": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Sets",
+      "type": "integer"
+    },
+    "reps": {
+      "maximum": 30,
+      "minimum": 1,
+      "title": "Reps",
+      "type": "integer"
+    },
+    "weight_lb": {
+      "anyOf": [
+        {
+          "maximum": 500,
+          "minimum": 5,
+          "multipleOf": 5,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Weight Lb"
+    }
+  },
+  "required": [
+    "exercise_id",
+    "sets",
+    "reps"
+  ],
+  "title": "PlannedExercise",
+  "type": "object"
+}

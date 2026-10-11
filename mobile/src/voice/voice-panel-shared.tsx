@@ -33,7 +33,22 @@ function VoiceControls({ credentials, snapshot, act, useConversation }: VoicePro
         const { exercise_id } = z.object({ exercise_id: z.string().min(1) }).parse(value);
         const catalog = await api.catalog();
         const exercise = catalog.exercises.find(e => e.id === exercise_id);
-        return JSON.stringify(exercise || { error: 'Unknown exercise. Use the current session exercise ID.' });
+        if (!exercise) return JSON.stringify({ error: 'Unknown exercise. Use the current session exercise ID.' });
+        const muscleName = (id: string) => catalog.muscle_groups.find(group => group.id === id)?.name ?? id;
+        return JSON.stringify({
+          exercise_id: exercise.id,
+          name: exercise.name,
+          equipment: exercise.equipment,
+          location: exercise.location,
+          target_muscle: muscleName(exercise.primary_muscle_group),
+          secondary_muscles: exercise.secondary_muscle_groups.map(muscleName),
+          setup: exercise.setup,
+          cue: exercise.cue,
+          mistake: exercise.mistake,
+          troubleshooting: exercise.troubleshooting,
+          stop_conditions: exercise.stop_conditions,
+          review_status: exercise.review_status,
+        });
       },
       submit_workout_action: async (value: unknown) => {
         processingTool.current = true;

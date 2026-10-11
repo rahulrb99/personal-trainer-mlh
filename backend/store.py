@@ -3,6 +3,7 @@ import json
 import secrets
 import sqlite3
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Iterator
@@ -54,11 +55,48 @@ class Store:
         row = db.execute("SELECT token_hash,state FROM sessions WHERE id=?", (session_id,)).fetchone()
         if not row or not secrets.compare_digest(row[0], self.digest(token)):
             raise StoreError("Session not found or token invalid", 401)
-        return json.loads(row[1])
+        state = json.loads(row[1])
+        if self.hydrate_state(state):
+            self.save(db, state)
+        return state
 
     @staticmethod
     def save(db: sqlite3.Connection, state: dict) -> None:
         db.execute("UPDATE sessions SET state=? WHERE id=?", (json.dumps(state), state["session_id"]))
+
+    def hydrate_exercise(self, exercise: dict) -> bool:
+        catalog_exercise = next((item for item in self.catalog["exercises"] if item["id"] == exercise.get("id")), None)
+        defaults = {
+            "primary_muscle_group": "unknown",
+            "secondary_muscle_groups": [],
+            "weight_min_lb": 5,
+            "weight_max_lb": 500,
+            "weight_step_lb": 5,
+            "troubleshooting": "Ask gym staff to verify this machine's setup.",
+            "stop_conditions": "Stop for sharp pain, dizziness, numbness, or abnormal machine movement.",
+            "sources": [{"title": "Legacy session guidance", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}],
+            "review_status": "professional_review_pending",
+        }
+        changed = False
+        for key, fallback in defaults.items():
+            if key not in exercise:
+                exercise[key] = deepcopy(catalog_exercise[key]) if catalog_exercise and key in catalog_exercise else deepcopy(fallback)
+                changed = True
+        if "instance_id" in exercise and "weight_lb" not in exercise:
+            exercise["weight_lb"] = None
+            changed = True
+        return changed
+
+    def hydrate_state(self, state: dict) -> bool:
+        changed = False
+        entries = state["queue"] + state["deferred"] + state["completed"] + state["skipped"]
+        if state["current"]:
+            entries.append(state["current"])
+        if state["pending_alternative"]:
+            entries.append(state["pending_alternative"])
+        for exercise in entries:
+            changed = self.hydrate_exercise(exercise) or changed
+        return changed
 
     def get(self, session_id: str, token: str, now: datetime | None = None) -> dict:
         now = now or utc_now()
@@ -80,7 +118,9 @@ class Store:
             if previous:
                 if previous[0] != request:
                     raise StoreError("Event ID was already used with different content", 409, state)
-                return {"snapshot": json.loads(previous[1]), "replayed": True}
+                replayed = json.loads(previous[1])
+                self.hydrate_state(replayed)
+                return {"snapshot": replayed, "replayed": True}
             if expire_rest(state, now):
                 self.save(db, state)
             if state["version"] != event.expected_version:

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError, streamUrl } from '@/api/client';
-import { Action, Credentials, Preferences, Snapshot, snapshotSchema } from '@/api/schema';
+import { Action, Credentials, PlannedExercise, Preferences, Snapshot, snapshotSchema } from '@/api/schema';
 import { loadSession, saveSession } from '@/api/session-storage';
 
 type ConnectionState = 'Connecting' | 'Live' | 'Reconnecting' | 'Offline';
@@ -156,9 +156,9 @@ export function useSession() {
     finally { busy.current = false; setPending(false); }
   }, [credentials, accept]);
 
-  async function start(preferences: Preferences, demo: boolean) {
+  async function start(preferences: Preferences, demo: boolean, selectedMuscleGroups: string[], plan: PlannedExercise[]) {
     setPending(true); setError(null);
-    try { const result = await api.create(preferences, demo); const c = { session_id: result.snapshot.session_id, access_token: result.access_token }; await saveSession(c); accept(result.snapshot); setCredentials(c); }
+    try { const result = await api.create(preferences, demo, selectedMuscleGroups, plan); const c = { session_id: result.snapshot.session_id, access_token: result.access_token }; await saveSession(c); accept(result.snapshot); setCredentials(c); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Cannot start workout'); }
     finally { setPending(false); }
   }

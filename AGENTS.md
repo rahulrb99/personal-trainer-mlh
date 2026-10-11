@@ -4,10 +4,10 @@ Applies to both developers and every coding assistant working in this repository
 
 ## Product boundaries
 
-- Build web first: shared React Native Web/iOS app, live ElevenLabs voice, deterministic workout backend, web watch-control panel.
+- Build web first: shared React Native Web/iOS app, live ElevenLabs voice, deterministic workout backend, muscle-first editable setup, web watch-control panel.
 - Do the early native voice spike in Stage 2; move the full experience to iPhone simulator in Stage 4 and SwiftUI watch simulator in Stage 5.
 - Equipment availability is user-reported; gym inventory and guidance are developer-configured. Do not add occupancy sensors, music, dashboards or automatic form detection without a scope change.
-- Keep strict exercise reordering as the core adaptation. Approved alternatives require user acceptance.
+- Keep strict exercise reordering as the core adaptation. Pre-session recommendations come only from the configured catalog; approved alternatives require user acceptance.
 - Plan is intent, not completion evidence. Do not mark stages passed based on scaffolds or mocked responses.
 
 ## Two-developer ownership

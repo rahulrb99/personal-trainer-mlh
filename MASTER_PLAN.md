@@ -8,7 +8,7 @@ Spotter is the product; Mat is the voice coach. The user sets preferences and a 
 
 First deliverable: a working React Native Web experience on Mac and Windows, with live ElevenLabs voice and a simulated watch-control panel. Next deliverables: the same workout on an iPhone simulator and a small SwiftUI Apple Watch simulator app. Physical iPhone/headphone testing is optional after those pass.
 
-Use a fictional, developer-configured gym with three planned exercises and a small reviewed catalog. Default availability is available until the user reports Taken. No automatic occupancy detection. Phone screen interaction is mainly setup; session status and fallback controls remain visible for development/recovery.
+Use a fictional, developer-configured gym with 18 source-backed machines. During setup, the user selects muscle groups on a body map, reviews a deterministic recommendation of up to eight machines, and may edit sets, reps and an optional self-selected weight before approval. Guidance remains developer-paraphrased with professional review pending. Default availability is available until the user reports Taken. No automatic occupancy detection. Phone screen interaction is mainly setup; session status and fallback controls remain visible for development/recovery.
 
 Exclude Spotify, admin dashboard, sensors, computer vision, automatic reps, indoor positioning, screenshot/PDF import and true local wake-word detection. Brief exercise questions are grounded in curated guidance; there is no claim to observe actual form.
 
@@ -63,7 +63,7 @@ Both: select the demo routine, voice tool names, strict/substitution preferences
 Validation at end:
 
 1. Each person follows the runbook from a fresh terminal; browser app and backend start.
-2. Browser fetches health/catalog and displays the same three-exercise routine on Mac and Windows.
+2. Browser fetches health/catalog and displays the same configured machine and muscle-group catalog on Mac and Windows.
 3. Confirm CORS allows intended local browser origins and WebSocket URL configuration is explicit.
 4. Confirm no provider API key is in frontend bundles/config; `.env.example` contains placeholders only.
 5. Both review one create-session, action and snapshot JSON example. Record schema version 1.
@@ -203,7 +203,7 @@ Exit: verified submission, not merely a drafted page or locally recorded video.
 
 ## Shared contract details
 
-Backend endpoints: health/catalog; create/get session; post events; get summary; authorized voice token; WebSocket stream; exchange pairing code for session token.
+Backend endpoints: health/catalog; preview a muscle-group plan; create/get session; post events; get summary; authorized voice token; WebSocket stream; exchange pairing code for session token.
 
 Event fields: UUID event_id, expected_version, source, type, exercise_instance_id, set_index, payload. Snapshot fields: monotonic version, server time, phase, preferences, current exercise/equipment/location/set, rest deadline, queue/deferred/completed entries, pending alternative, last decision.
 

@@ -7,7 +7,8 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 | Route | Authorization | Result |
 |---|---|---|
 | GET /health | None | API status and voice configuration presence |
-| GET /catalog | None | Fictional gym, exercises, routine, content review status |
+| GET /catalog | None | Fictional gym, 18 source-backed machines, muscle groups and review status |
+| POST /plans/preview | None, local prototype | Deterministic PlanPreview for selected muscle groups |
 | POST /sessions | None, local prototype | CreateResult: snapshot + session access token |
 | GET /sessions/{id} | Bearer session token | Snapshot |
 | POST /sessions/{id}/events | Bearer session token | EventResult: snapshot + replayed flag |
@@ -15,7 +16,11 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 | POST /voice/token | Bearer session token | Short-lived ElevenLabs WebRTC token; session_id in body |
 | WS /sessions/{id}/stream | First JSON frame carries access_token | Versioned snapshot frames, optional ping/pong |
 
-Create body: `{"routine_id":"full-body","preferences":{"name":"Thanmay","mode":"strict","coaching":"standard","excluded_exercise_ids":[]},"demo_mode":true}`. Demo rests are 5 seconds; normal rests are 60. Normal mode is the API default.
+Plan preview body: `{"muscle_group_ids":["chest","back"]}`. The backend selects up to two configured machines per group in round-robin order, removes duplicates and caps the result at eight.
+
+Customized create body: `{"routine_id":"full-body","selected_muscle_group_ids":["chest"],"plan":[{"exercise_id":"chest-press","sets":3,"reps":12,"weight_lb":25}],"preferences":{"name":"Rahul","mode":"strict","coaching":"standard","excluded_exercise_ids":[]},"demo_mode":true}`. Plans contain 1–8 unique machines. Sets are 1–5, reps 1–30 and optional pound values must match that machine's configured range and increment. A plan exercise must train at least one selected group. Omitting both selected groups and plan retains the original `full-body` compatibility routine. Demo rests are 5 seconds; normal rests are 60.
+
+WebSocket clients first send `StreamAuthorization` and receive a current `SnapshotFrame` after authorization. Each later committed version is sent once per connection. Reconnecting starts with the authoritative current snapshot; the server does not replay command frames. A text `ping` receives `PongFrame`. Invalid, missing or empty authorization closes with code 1008. These frame schemas are exported in `contracts/`.
 
 Session state is persisted in SQLite. Rest expiry is backend-owned, checked periodically and on read/action. Events serialize inside BEGIN IMMEDIATE transactions; deduplication precedes version validation. Reused IDs with different content are rejected. Separate stale actions return 409 with fresh snapshot. Do not auto-retarget stale commands to a new set. Replayed old snapshots must not regress a newer client state.
 
@@ -31,7 +36,11 @@ The provider token authorizes the configured agent, not arbitrary workout action
 
 `backend/tool_contract.py` produces `contracts/client-tools.json` and `agent/tools.json`. The three names remain get_session_state, get_exercise_guidance(exercise_id), submit_workout_action(action, exercise_instance_id, set_index). All await responses. Guidance and state are read-only; action enum matches backend Event types and excludes rest_elapsed. Target `current.instance_id`, not `current.id`; current 1-based set_index is used for exercise actions, null targets for retry/end. Models define tool argument shapes; app handlers remain responsible for runtime validation and event submission. Agent setup: agent/README.md. No second conversation engine or backend tool executor is introduced.
 
-Unavailable equipment is session-local. Strict mode defers it. When remaining work is deferred, enter blocked and explicitly retry it. There is no global occupancy feed. Alternative acceptance creates a new exercise instance and still requires equipment confirmation.
+Unavailable equipment is session-local. Strict mode defers it. When remaining work is deferred, enter blocked and explicitly retry it. There is no global occupancy feed. Alternative acceptance creates a new exercise instance with its own catalog defaults, resets weight to null and still requires equipment confirmation.
+
+### Machine guidance
+
+Each catalog machine has an exact ID, fictional location, primary/secondary muscle groups, setup, cue, common mistake, troubleshooting, stop conditions, weight-slider bounds, approved alternatives, public source URLs and `professional_review_pending` status. Guidance is developer-paraphrased and source-backed, not professionally certified. Clients and Mat retrieve exact records; there is no vector search or approximate machine matching.
 
 ## Joining browser watch controls
 

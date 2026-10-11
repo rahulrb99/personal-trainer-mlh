@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { z } from 'zod';
-import { Action, Credentials, Preferences, Snapshot, catalogSchema, createResultSchema, eventResultSchema, snapshotSchema, summarySchema } from './schema';
+import { Action, Credentials, PlannedExercise, Preferences, Snapshot, catalogSchema, createResultSchema, eventResultSchema, planPreviewSchema, snapshotSchema, summarySchema } from './schema';
 
 export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 export class ApiError extends Error {
@@ -30,7 +30,10 @@ async function request<T>(path: string, schema: z.ZodType<T>, credentials?: Cred
 export const api = {
   catalog: () => request('/catalog', catalogSchema),
   health: () => request('/health', z.object({ status: z.string(), schema_version: z.literal(1), voice_configured: z.boolean() })),
-  create: (preferences: Preferences, demo_mode: boolean) => request('/sessions', createResultSchema, undefined, { routine_id: 'full-body', preferences, demo_mode }),
+  previewPlan: (muscle_group_ids: string[]) => request('/plans/preview', planPreviewSchema, undefined, { muscle_group_ids }),
+  create: (preferences: Preferences, demo_mode: boolean, selected_muscle_group_ids: string[], plan: PlannedExercise[]) => request('/sessions', createResultSchema, undefined, {
+    routine_id: 'full-body', preferences, demo_mode, selected_muscle_group_ids, plan,
+  }),
   snapshot: (c: Credentials) => request(`/sessions/${c.session_id}`, snapshotSchema, c),
   summary: (c: Credentials) => request(`/sessions/${c.session_id}/summary`, summarySchema, c),
   event: (c: Credentials, snapshot: Snapshot, type: Action, source: 'web' | 'watch' | 'voice' = 'web') => request(`/sessions/${c.session_id}/events`, eventResultSchema, c, {

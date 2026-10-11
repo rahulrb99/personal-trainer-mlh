@@ -1,5 +1,21 @@
 # Initial implementation handoff
 
+## Interactive 3D muscle model
+
+The web muscle selector now loads the pinned `mobile/public/models/muscular.glb` anatomy asset through React Three Fiber and a locally bundled Draco decoder. The source annotation mesh is removed before body-only bounds are calculated, so the vertical rotation axis passes through the body. It rotates continuously on a fixed horizontal orbit around the chest, supports left/right drag, resolves clicks through unmapped superficial geometry to the first mapped workout muscle, and renders selected groups bright red against dimmed cool-gray anatomy. Pitch, pan, and zoom are disabled. The ten labeled buttons remain the accessible input path. Native resolution still uses the existing front/back SVG schematic; a web load/WebGL failure also falls back to that schematic.
+
+The GLB is unchanged at 8,819,872 bytes with SHA-256 `5234472152a791baf002bed614707c33ba3ab2b278e41f41899a79a453d40785`. `mobile/public/models/ATTRIBUTION.md` and `UPSTREAM-LICENSE.txt` preserve BodyParts3D/Z-Anatomy attribution and share-alike terms. The pinned Three.js Draco files have their own notice under `mobile/public/draco/`.
+
+Plan editing now totals sets against each exercise's primary and secondary muscle groups. Above six sets for a group, approval is disabled until the user acknowledges the non-diagnostic fatigue caution; every draft edit resets acknowledgment. Windows verification passed typecheck, lint, production export, all 35 backend tests, checksum validation, model load/continuous rotation, direct mesh selection, accessible-button selection, manual orbit with resumed rotation, the no-warning-at-six boundary, warning-at-seven behavior, secondary-group counting, and acknowledgment reset. Evidence: `docs/evidence/interactive-3d-centered-contrast.png`, `interactive-3d-highlight-fixed-orbit.png`, and `interactive-3d-volume-caution.png`. Native rendering was not run on Windows.
+
+## Muscle-first builder scope change
+
+The fixed three-machine setup has been expanded locally to a source-backed fictional catalog of 18 machines and ten muscle groups. The backend exposes deterministic plan previews and validates approved custom plans with sets, reps and optional pounds. The shared setup includes a front/back muscle map, editable plan and weight sliders. Existing fixed `full-body` requests remain compatible. Guidance is developer-paraphrased and explicitly pending professional review; there is no vector database. Contract schemas and browser evidence must accompany this change before handoff.
+
+## Windows backend — Stage 3 transport complete
+
+The backend-owned Stage 3 transport work is complete locally. WebSocket authorization, snapshot and pong frames now use exported Pydantic contracts. Tests cover initial state, watch-sourced acknowledgments, duplicate replay, external broadcasts, authoritative reconnects, ping/pong and rejected authorization. Contract export and the backend suite pass with 31 tests. A Windows two-tab live-agent walkthrough now passes state synchronization, external explanations, reconnect, duplicate-control protection, voice reconnect and one full six-set routine. Stage 3 remains partial pending audible-output confirmation, a spoken question, voice-vs-control concurrency and a second full spoken run; see `docs/VALIDATION.md`.
+
 ## Current handoff to Thanmay — Stage 2 testing
 
 Latest status supersedes the historical notes below: user published Mat with the project prompt, correct target-omission instruction, three attached client tools and authentication. Real API authorization passes with ElevenAgents Write. Credentials remain in ignored backend/.env and must be configured locally on Mac; they are not part of this commit.

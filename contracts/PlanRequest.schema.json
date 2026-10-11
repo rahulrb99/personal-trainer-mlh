@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "muscle_group_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Muscle Group Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "muscle_group_ids"
+  ],
+  "title": "PlanRequest",
+  "type": "object"
+}

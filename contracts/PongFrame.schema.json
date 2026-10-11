@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "pong",
+      "default": "pong",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "title": "PongFrame",
+  "type": "object"
+}

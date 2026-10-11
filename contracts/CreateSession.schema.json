@@ -1,5 +1,49 @@
 {
   "$defs": {
+    "PlannedExercise": {
+      "additionalProperties": false,
+      "properties": {
+        "exercise_id": {
+          "minLength": 1,
+          "title": "Exercise Id",
+          "type": "string"
+        },
+        "sets": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Sets",
+          "type": "integer"
+        },
+        "reps": {
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Reps",
+          "type": "integer"
+        },
+        "weight_lb": {
+          "anyOf": [
+            {
+              "maximum": 500,
+              "minimum": 5,
+              "multipleOf": 5,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weight Lb"
+        }
+      },
+      "required": [
+        "exercise_id",
+        "sets",
+        "reps"
+      ],
+      "title": "PlannedExercise",
+      "type": "object"
+    },
     "Preferences": {
       "additionalProperties": false,
       "properties": {
@@ -56,6 +100,31 @@
       "default": false,
       "title": "Demo Mode",
       "type": "boolean"
+    },
+    "selected_muscle_group_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10,
+      "title": "Selected Muscle Group Ids",
+      "type": "array"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/PlannedExercise"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Plan"
     }
   },
   "title": "CreateSession",

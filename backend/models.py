@@ -28,10 +28,44 @@ class Preferences(StrictModel):
     coaching: Literal["quiet", "standard", "teach"] = "standard"
 
 
+class PlannedExercise(StrictModel):
+    exercise_id: str = Field(min_length=1)
+    sets: int = Field(ge=1, le=5, strict=True)
+    reps: int = Field(ge=1, le=30, strict=True)
+    weight_lb: int | None = Field(default=None, ge=5, le=500, multiple_of=5, strict=True)
+
+
+class PlanRequest(StrictModel):
+    muscle_group_ids: list[str] = Field(min_length=1, max_length=10)
+
+    @model_validator(mode="after")
+    def unique_groups(self):
+        if len(self.muscle_group_ids) != len(set(self.muscle_group_ids)):
+            raise ValueError("Muscle groups must be unique")
+        return self
+
+
+class PlanPreview(StrictModel):
+    muscle_group_ids: list[str]
+    plan: list[PlannedExercise]
+
+
 class CreateSession(StrictModel):
     routine_id: str = "full-body"
     preferences: Preferences = Field(default_factory=Preferences)
     demo_mode: bool = False
+    selected_muscle_group_ids: list[str] = Field(default_factory=list, max_length=10)
+    plan: list[PlannedExercise] | None = Field(default=None, min_length=1, max_length=8)
+
+    @model_validator(mode="after")
+    def validate_custom_plan_shape(self):
+        if self.plan is not None and not self.selected_muscle_group_ids:
+            raise ValueError("A customized plan requires selected muscle groups")
+        if self.plan is None and self.selected_muscle_group_ids:
+            raise ValueError("Selected muscle groups require a customized plan")
+        if len(self.selected_muscle_group_ids) != len(set(self.selected_muscle_group_ids)):
+            raise ValueError("Selected muscle groups must be unique")
+        return self
 
 
 class Event(StrictModel):
@@ -54,6 +88,11 @@ class Event(StrictModel):
         return self
 
 
+class GuidanceSource(StrictModel):
+    title: str = Field(min_length=1)
+    url: str = Field(pattern=r"^https://")
+
+
 class Exercise(StrictModel):
     id: str
     name: str
@@ -63,16 +102,26 @@ class Exercise(StrictModel):
     sets: int = Field(gt=0)
     reps: int = Field(gt=0)
     rest_seconds: int = Field(gt=0)
+    primary_muscle_group: str
+    secondary_muscle_groups: list[str]
+    weight_min_lb: int = Field(ge=5)
+    weight_max_lb: int = Field(ge=5)
+    weight_step_lb: int = Field(ge=1)
     setup: str
     cue: str
     mistake: str
+    troubleshooting: str
+    stop_conditions: str
     alternatives: list[str]
+    sources: list[GuidanceSource] = Field(min_length=1)
+    review_status: Literal["professional_review_pending"]
 
 
 class ExerciseInstance(Exercise):
     instance_id: str
     original_exercise_id: str
     completed_sets: int = Field(ge=0)
+    weight_lb: int | None = Field(default=None, ge=5, le=500, multiple_of=5)
 
 
 class Snapshot(StrictModel):
@@ -104,3 +153,16 @@ class CreateResult(StrictModel):
 class EventResult(StrictModel):
     snapshot: Snapshot
     replayed: bool
+
+
+class StreamAuthorization(StrictModel):
+    access_token: str = Field(min_length=1)
+
+
+class SnapshotFrame(StrictModel):
+    type: Literal["snapshot"] = "snapshot"
+    snapshot: Snapshot
+
+
+class PongFrame(StrictModel):
+    type: Literal["pong"] = "pong"

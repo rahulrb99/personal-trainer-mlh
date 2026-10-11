@@ -37,6 +37,44 @@
         }
       }
     },
+    "/plans/preview": {
+      "post": {
+        "summary": "Plan Preview",
+        "operationId": "plan_preview_plans_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions": {
       "post": {
         "summary": "Create",
@@ -307,6 +345,30 @@
             "type": "boolean",
             "title": "Demo Mode",
             "default": false
+          },
+          "selected_muscle_group_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Selected Muscle Group Ids"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PlannedExercise"
+                },
+                "type": "array",
+                "maxItems": 8,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
           }
         },
         "additionalProperties": false,
@@ -434,6 +496,32 @@
             "exclusiveMinimum": 0.0,
             "title": "Rest Seconds"
           },
+          "primary_muscle_group": {
+            "type": "string",
+            "title": "Primary Muscle Group"
+          },
+          "secondary_muscle_groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Secondary Muscle Groups"
+          },
+          "weight_min_lb": {
+            "type": "integer",
+            "minimum": 5.0,
+            "title": "Weight Min Lb"
+          },
+          "weight_max_lb": {
+            "type": "integer",
+            "minimum": 5.0,
+            "title": "Weight Max Lb"
+          },
+          "weight_step_lb": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Weight Step Lb"
+          },
           "setup": {
             "type": "string",
             "title": "Setup"
@@ -446,12 +534,33 @@
             "type": "string",
             "title": "Mistake"
           },
+          "troubleshooting": {
+            "type": "string",
+            "title": "Troubleshooting"
+          },
+          "stop_conditions": {
+            "type": "string",
+            "title": "Stop Conditions"
+          },
           "alternatives": {
             "items": {
               "type": "string"
             },
             "type": "array",
             "title": "Alternatives"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceSource"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sources"
+          },
+          "review_status": {
+            "type": "string",
+            "const": "professional_review_pending",
+            "title": "Review Status"
           }
         },
         "additionalProperties": false,
@@ -465,10 +574,19 @@
           "sets",
           "reps",
           "rest_seconds",
+          "primary_muscle_group",
+          "secondary_muscle_groups",
+          "weight_min_lb",
+          "weight_max_lb",
+          "weight_step_lb",
           "setup",
           "cue",
           "mistake",
-          "alternatives"
+          "troubleshooting",
+          "stop_conditions",
+          "alternatives",
+          "sources",
+          "review_status"
         ],
         "title": "Exercise"
       },
@@ -509,6 +627,32 @@
             "exclusiveMinimum": 0.0,
             "title": "Rest Seconds"
           },
+          "primary_muscle_group": {
+            "type": "string",
+            "title": "Primary Muscle Group"
+          },
+          "secondary_muscle_groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Secondary Muscle Groups"
+          },
+          "weight_min_lb": {
+            "type": "integer",
+            "minimum": 5.0,
+            "title": "Weight Min Lb"
+          },
+          "weight_max_lb": {
+            "type": "integer",
+            "minimum": 5.0,
+            "title": "Weight Max Lb"
+          },
+          "weight_step_lb": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Weight Step Lb"
+          },
           "setup": {
             "type": "string",
             "title": "Setup"
@@ -521,12 +665,33 @@
             "type": "string",
             "title": "Mistake"
           },
+          "troubleshooting": {
+            "type": "string",
+            "title": "Troubleshooting"
+          },
+          "stop_conditions": {
+            "type": "string",
+            "title": "Stop Conditions"
+          },
           "alternatives": {
             "items": {
               "type": "string"
             },
             "type": "array",
             "title": "Alternatives"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/GuidanceSource"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sources"
+          },
+          "review_status": {
+            "type": "string",
+            "const": "professional_review_pending",
+            "title": "Review Status"
           },
           "instance_id": {
             "type": "string",
@@ -540,6 +705,20 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Completed Sets"
+          },
+          "weight_lb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "multipleOf": 5.0,
+                "maximum": 500.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Lb"
           }
         },
         "additionalProperties": false,
@@ -553,15 +732,45 @@
           "sets",
           "reps",
           "rest_seconds",
+          "primary_muscle_group",
+          "secondary_muscle_groups",
+          "weight_min_lb",
+          "weight_max_lb",
+          "weight_step_lb",
           "setup",
           "cue",
           "mistake",
+          "troubleshooting",
+          "stop_conditions",
           "alternatives",
+          "sources",
+          "review_status",
           "instance_id",
           "original_exercise_id",
           "completed_sets"
         ],
         "title": "ExerciseInstance"
+      },
+      "GuidanceSource": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https://",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "url"
+        ],
+        "title": "GuidanceSource"
       },
       "HTTPValidationError": {
         "properties": {
@@ -575,6 +784,93 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "PlanPreview": {
+        "properties": {
+          "muscle_group_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Muscle Group Ids"
+          },
+          "plan": {
+            "items": {
+              "$ref": "#/components/schemas/PlannedExercise"
+            },
+            "type": "array",
+            "title": "Plan"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "muscle_group_ids",
+          "plan"
+        ],
+        "title": "PlanPreview"
+      },
+      "PlanRequest": {
+        "properties": {
+          "muscle_group_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Muscle Group Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "muscle_group_ids"
+        ],
+        "title": "PlanRequest"
+      },
+      "PlannedExercise": {
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Exercise Id"
+          },
+          "sets": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Sets"
+          },
+          "reps": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Reps"
+          },
+          "weight_lb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "multipleOf": 5.0,
+                "maximum": 500.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Lb"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "exercise_id",
+          "sets",
+          "reps"
+        ],
+        "title": "PlannedExercise"
       },
       "Preferences": {
         "properties": {

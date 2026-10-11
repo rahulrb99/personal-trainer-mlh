@@ -38,6 +38,32 @@
           "title": "Rest Seconds",
           "type": "integer"
         },
+        "primary_muscle_group": {
+          "title": "Primary Muscle Group",
+          "type": "string"
+        },
+        "secondary_muscle_groups": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Secondary Muscle Groups",
+          "type": "array"
+        },
+        "weight_min_lb": {
+          "minimum": 5,
+          "title": "Weight Min Lb",
+          "type": "integer"
+        },
+        "weight_max_lb": {
+          "minimum": 5,
+          "title": "Weight Max Lb",
+          "type": "integer"
+        },
+        "weight_step_lb": {
+          "minimum": 1,
+          "title": "Weight Step Lb",
+          "type": "integer"
+        },
         "setup": {
           "title": "Setup",
           "type": "string"
@@ -50,12 +76,33 @@
           "title": "Mistake",
           "type": "string"
         },
+        "troubleshooting": {
+          "title": "Troubleshooting",
+          "type": "string"
+        },
+        "stop_conditions": {
+          "title": "Stop Conditions",
+          "type": "string"
+        },
         "alternatives": {
           "items": {
             "type": "string"
           },
           "title": "Alternatives",
           "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/GuidanceSource"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "review_status": {
+          "const": "professional_review_pending",
+          "title": "Review Status",
+          "type": "string"
         }
       },
       "required": [
@@ -67,10 +114,19 @@
         "sets",
         "reps",
         "rest_seconds",
+        "primary_muscle_group",
+        "secondary_muscle_groups",
+        "weight_min_lb",
+        "weight_max_lb",
+        "weight_step_lb",
         "setup",
         "cue",
         "mistake",
-        "alternatives"
+        "troubleshooting",
+        "stop_conditions",
+        "alternatives",
+        "sources",
+        "review_status"
       ],
       "title": "Exercise",
       "type": "object"
@@ -113,6 +169,32 @@
           "title": "Rest Seconds",
           "type": "integer"
         },
+        "primary_muscle_group": {
+          "title": "Primary Muscle Group",
+          "type": "string"
+        },
+        "secondary_muscle_groups": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Secondary Muscle Groups",
+          "type": "array"
+        },
+        "weight_min_lb": {
+          "minimum": 5,
+          "title": "Weight Min Lb",
+          "type": "integer"
+        },
+        "weight_max_lb": {
+          "minimum": 5,
+          "title": "Weight Max Lb",
+          "type": "integer"
+        },
+        "weight_step_lb": {
+          "minimum": 1,
+          "title": "Weight Step Lb",
+          "type": "integer"
+        },
         "setup": {
           "title": "Setup",
           "type": "string"
@@ -125,12 +207,33 @@
           "title": "Mistake",
           "type": "string"
         },
+        "troubleshooting": {
+          "title": "Troubleshooting",
+          "type": "string"
+        },
+        "stop_conditions": {
+          "title": "Stop Conditions",
+          "type": "string"
+        },
         "alternatives": {
           "items": {
             "type": "string"
           },
           "title": "Alternatives",
           "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/GuidanceSource"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "review_status": {
+          "const": "professional_review_pending",
+          "title": "Review Status",
+          "type": "string"
         },
         "instance_id": {
           "title": "Instance Id",
@@ -144,6 +247,21 @@
           "minimum": 0,
           "title": "Completed Sets",
           "type": "integer"
+        },
+        "weight_lb": {
+          "anyOf": [
+            {
+              "maximum": 500,
+              "minimum": 5,
+              "multipleOf": 5,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weight Lb"
         }
       },
       "required": [
@@ -155,15 +273,45 @@
         "sets",
         "reps",
         "rest_seconds",
+        "primary_muscle_group",
+        "secondary_muscle_groups",
+        "weight_min_lb",
+        "weight_max_lb",
+        "weight_step_lb",
         "setup",
         "cue",
         "mistake",
+        "troubleshooting",
+        "stop_conditions",
         "alternatives",
+        "sources",
+        "review_status",
         "instance_id",
         "original_exercise_id",
         "completed_sets"
       ],
       "title": "ExerciseInstance",
+      "type": "object"
+    },
+    "GuidanceSource": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "pattern": "^https://",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url"
+      ],
+      "title": "GuidanceSource",
       "type": "object"
     },
     "Preferences": {

@@ -1,12 +1,229 @@
 {
   "schema_version": 1,
-  "gym": {"id": "demo-gym", "name": "North gym", "description": "Fictional gym for this prototype"},
-  "exercises": [
-    {"id": "chest-press", "name": "Chest press", "equipment": "Chest press machine", "location": "Floor 1 · Strength zone", "muscles": "Chest and triceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Adjust the seat so the handles are around chest height. Choose a comfortable weight.", "cue": "Keep your back supported. Press smoothly, then return with control.", "mistake": "Avoid shrugging your shoulders or locking your elbows forcefully.", "alternatives": ["dumbbell-press"]},
-    {"id": "seated-row", "name": "Seated row", "equipment": "Seated row machine", "location": "Floor 1 · Cable zone", "muscles": "Upper back and biceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Adjust the seat and support so you can reach the handles comfortably.", "cue": "Keep your torso steady and pull your elbows back with control.", "mistake": "Avoid swinging your torso to move the weight.", "alternatives": []},
-    {"id": "leg-extension", "name": "Leg extension", "equipment": "Leg extension machine", "location": "Floor 1 · Strength zone", "muscles": "Quadriceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Follow the machine setup instructions; align the pivot with your knee and position the pad above your ankle.", "cue": "Extend smoothly through a comfortable range and lower with control.", "mistake": "Avoid throwing the weight or forcing an uncomfortable range.", "alternatives": []},
-    {"id": "dumbbell-press", "name": "Dumbbell bench press", "equipment": "Dumbbells and flat bench", "location": "Floor 1 · Free weights", "muscles": "Chest and triceps", "sets": 2, "reps": 10, "rest_seconds": 60, "setup": "Use a stable bench and a light, comfortable pair of dumbbells. Ask gym staff for help with unfamiliar setup.", "cue": "Press smoothly and keep your wrists aligned over your forearms.", "mistake": "Avoid dropping the weights quickly or forcing a deep range.", "alternatives": []}
+  "gym": {
+    "id": "demo-gym",
+    "name": "North gym",
+    "description": "Fictional gym for this prototype. Confirm each machine's placard and adjustments before use."
+  },
+  "body_regions": [
+    {"id": "left_pectorals", "name": "Left pectorals", "view": "front", "side": "left", "muscle_group_ids": ["chest"], "legacy_aliases": ["left_chest"]},
+    {"id": "right_pectorals", "name": "Right pectorals", "view": "front", "side": "right", "muscle_group_ids": ["chest"], "legacy_aliases": ["right_chest"]},
+    {"id": "left_upper_back", "name": "Left upper back", "view": "back", "side": "left", "muscle_group_ids": ["back"], "legacy_aliases": ["upper_back"]},
+    {"id": "right_upper_back", "name": "Right upper back", "view": "back", "side": "right", "muscle_group_ids": ["back"], "legacy_aliases": ["upper_back"]},
+    {"id": "left_latissimus", "name": "Left latissimus dorsi", "view": "back", "side": "left", "muscle_group_ids": ["back"], "legacy_aliases": ["mid_back"]},
+    {"id": "right_latissimus", "name": "Right latissimus dorsi", "view": "back", "side": "right", "muscle_group_ids": ["back"], "legacy_aliases": ["mid_back"]},
+    {"id": "left_anterior_deltoid", "name": "Left anterior deltoid", "view": "front", "side": "left", "muscle_group_ids": ["shoulders"], "legacy_aliases": ["left_shoulder"]},
+    {"id": "right_anterior_deltoid", "name": "Right anterior deltoid", "view": "front", "side": "right", "muscle_group_ids": ["shoulders"], "legacy_aliases": ["right_shoulder"]},
+    {"id": "left_posterior_deltoid", "name": "Left posterior deltoid", "view": "back", "side": "left", "muscle_group_ids": ["shoulders"], "legacy_aliases": ["left_shoulder"]},
+    {"id": "right_posterior_deltoid", "name": "Right posterior deltoid", "view": "back", "side": "right", "muscle_group_ids": ["shoulders"], "legacy_aliases": ["right_shoulder"]},
+    {"id": "left_biceps", "name": "Left biceps", "view": "front", "side": "left", "muscle_group_ids": ["biceps"], "legacy_aliases": ["left_upper_arm"]},
+    {"id": "right_biceps", "name": "Right biceps", "view": "front", "side": "right", "muscle_group_ids": ["biceps"], "legacy_aliases": ["right_upper_arm"]},
+    {"id": "left_triceps", "name": "Left triceps", "view": "back", "side": "left", "muscle_group_ids": ["triceps"], "legacy_aliases": ["left_upper_arm"]},
+    {"id": "right_triceps", "name": "Right triceps", "view": "back", "side": "right", "muscle_group_ids": ["triceps"], "legacy_aliases": ["right_upper_arm"]},
+    {"id": "left_quadriceps", "name": "Left quadriceps", "view": "front", "side": "left", "muscle_group_ids": ["quadriceps"], "legacy_aliases": ["left_thigh"]},
+    {"id": "right_quadriceps", "name": "Right quadriceps", "view": "front", "side": "right", "muscle_group_ids": ["quadriceps"], "legacy_aliases": ["right_thigh"]},
+    {"id": "left_hamstrings", "name": "Left hamstrings", "view": "back", "side": "left", "muscle_group_ids": ["hamstrings"], "legacy_aliases": ["left_thigh"]},
+    {"id": "right_hamstrings", "name": "Right hamstrings", "view": "back", "side": "right", "muscle_group_ids": ["hamstrings"], "legacy_aliases": ["right_thigh"]},
+    {"id": "left_gluteals", "name": "Left gluteals", "view": "back", "side": "left", "muscle_group_ids": ["glutes"], "legacy_aliases": ["left_glute"]},
+    {"id": "right_gluteals", "name": "Right gluteals", "view": "back", "side": "right", "muscle_group_ids": ["glutes"], "legacy_aliases": ["right_glute"]},
+    {"id": "left_calf", "name": "Left calf", "view": "back", "side": "left", "muscle_group_ids": ["calves"], "legacy_aliases": ["left_calf"]},
+    {"id": "right_calf", "name": "Right calf", "view": "back", "side": "right", "muscle_group_ids": ["calves"], "legacy_aliases": ["right_calf"]},
+    {"id": "left_abdominals", "name": "Left abdominals", "view": "front", "side": "left", "muscle_group_ids": ["core"], "legacy_aliases": ["abdomen"]},
+    {"id": "right_abdominals", "name": "Right abdominals", "view": "front", "side": "right", "muscle_group_ids": ["core"], "legacy_aliases": ["abdomen"]},
+    {"id": "left_obliques", "name": "Left obliques", "view": "front", "side": "left", "muscle_group_ids": ["core"], "legacy_aliases": ["abdomen"]},
+    {"id": "right_obliques", "name": "Right obliques", "view": "front", "side": "right", "muscle_group_ids": ["core"], "legacy_aliases": ["abdomen"]},
+    {"id": "left_lower_back", "name": "Left lower back", "view": "back", "side": "left", "muscle_group_ids": ["core"], "legacy_aliases": ["lower_back"]},
+    {"id": "right_lower_back", "name": "Right lower back", "view": "back", "side": "right", "muscle_group_ids": ["core"], "legacy_aliases": ["lower_back"]}
   ],
-  "routines": [{"id": "full-body", "name": "Full body foundations", "description": "Three movements. A simple place to start.", "exercise_ids": ["chest-press", "seated-row", "leg-extension"]}],
-  "content_status": "Developer-authored demo guidance; professional review pending. Not observed form feedback."
+  "equipment_catalog": [
+    {"id": "machine-chest-press", "name": "Selectorized chest press", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Push zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-pec-deck", "name": "Selectorized pec deck", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Push zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-lat-pulldown", "name": "Selectorized lat pulldown", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Pull zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-seated-row", "name": "Selectorized seated row", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Pull zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-shoulder-press", "name": "Selectorized shoulder press", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Push zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-lateral-raise", "name": "Selectorized lateral raise", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Shoulder bay", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-reverse-fly", "name": "Selectorized rear-delt fly", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Shoulder bay", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-arm-curl", "name": "Selectorized biceps curl", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Arm bay", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-triceps-press", "name": "Selectorized triceps press", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Arm bay", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-leg-press", "name": "Selectorized seated leg press", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-leg-extension", "name": "Selectorized leg extension", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-seated-leg-curl", "name": "Selectorized seated leg curl", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-glute-kickback", "name": "Selectorized glute machine", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-hip-abduction", "name": "Selectorized hip abductor", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-seated-calf-raise", "name": "Selectorized calf machine", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Lower-body zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-abdominal-crunch", "name": "Selectorized abdominal machine", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Core zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-torso-rotation", "name": "Selectorized torso rotation", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Core zone", "verification_status": "fictional_demo_configuration"},
+    {"id": "machine-back-extension", "name": "Selectorized back extension", "equipment_type": "selectorized_machine", "manufacturer": null, "model": null, "image_url": null, "floor": "Floor 1", "zone": "Core zone", "verification_status": "fictional_demo_configuration"}
+  ],
+  "exercise_metadata": [
+    {"exercise_id": "chest-press", "equipment_id": "machine-chest-press", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "horizontal_push", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "pec-deck", "equipment_id": "machine-pec-deck", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "horizontal_adduction", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "lat-pulldown", "equipment_id": "machine-lat-pulldown", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "vertical_pull", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "seated-row", "equipment_id": "machine-seated-row", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "horizontal_pull", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "shoulder-press", "equipment_id": "machine-shoulder-press", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "vertical_push", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "lateral-raise", "equipment_id": "machine-lateral-raise", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "shoulder_abduction", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "reverse-fly", "equipment_id": "machine-reverse-fly", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "horizontal_abduction", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "arm-curl", "equipment_id": "machine-arm-curl", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "elbow_flexion", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "triceps-press", "equipment_id": "machine-triceps-press", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "elbow_extension", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "leg-press", "equipment_id": "machine-leg-press", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "knee_and_hip_extension", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "leg-extension", "equipment_id": "machine-leg-extension", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "knee_extension", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "seated-leg-curl", "equipment_id": "machine-seated-leg-curl", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "knee_flexion", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "glute-kickback", "equipment_id": "machine-glute-kickback", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "hip_extension", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "hip-abduction", "equipment_id": "machine-hip-abduction", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "hip_abduction", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "seated-calf-raise", "equipment_id": "machine-seated-calf-raise", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "ankle_plantar_flexion", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "abdominal-crunch", "equipment_id": "machine-abdominal-crunch", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "trunk_flexion", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "torso-rotation", "equipment_id": "machine-torso-rotation", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "trunk_rotation", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"},
+    {"exercise_id": "back-extension", "equipment_id": "machine-back-extension", "equipment_type": "selectorized_machine", "difficulty_level": "unknown", "movement_pattern": "trunk_extension", "exercise_type": "resistance_training", "weight_unit": "lb", "weight_range_type": "configured_equipment_capability"}
+  ],
+  "muscle_groups": [
+    {"id": "chest", "name": "Chest", "view": "front", "body_regions": ["left_pectorals", "right_pectorals"]},
+    {"id": "back", "name": "Back", "view": "back", "body_regions": ["left_upper_back", "right_upper_back", "left_latissimus", "right_latissimus"]},
+    {"id": "shoulders", "name": "Shoulders", "view": "both", "body_regions": ["left_anterior_deltoid", "right_anterior_deltoid", "left_posterior_deltoid", "right_posterior_deltoid"]},
+    {"id": "biceps", "name": "Biceps", "view": "front", "body_regions": ["left_biceps", "right_biceps"]},
+    {"id": "triceps", "name": "Triceps", "view": "back", "body_regions": ["left_triceps", "right_triceps"]},
+    {"id": "quadriceps", "name": "Quadriceps", "view": "front", "body_regions": ["left_quadriceps", "right_quadriceps"]},
+    {"id": "hamstrings", "name": "Hamstrings", "view": "back", "body_regions": ["left_hamstrings", "right_hamstrings"]},
+    {"id": "glutes", "name": "Glutes", "view": "back", "body_regions": ["left_gluteals", "right_gluteals"]},
+    {"id": "calves", "name": "Calves", "view": "back", "body_regions": ["left_calf", "right_calf"]},
+    {"id": "core", "name": "Core", "view": "both", "body_regions": ["left_abdominals", "right_abdominals", "left_obliques", "right_obliques", "left_lower_back", "right_lower_back"]}
+  ],
+  "exercises": [
+    {
+      "id": "chest-press", "name": "Chest press", "equipment": "Selectorized chest press", "location": "Floor 1 · Push zone",
+      "primary_muscle_group": "chest", "secondary_muscle_groups": ["triceps", "shoulders"], "muscles": "Chest, triceps, and front shoulders",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 250, "weight_step_lb": 5,
+      "setup": "Adjust the seat so the handles are at mid-chest height, keep your back supported, and place both feet firmly.", "cue": "Press smoothly without locking your elbows, then return under control.", "mistake": "Do not arch your back, shrug, or let the elbows travel far behind the torso.",
+      "troubleshooting": "If the handles start too high or low, stop and readjust the seat. If you cannot control the return, reduce the weight.", "stop_conditions": "Stop for sharp pain, dizziness, numbness, or a machine that does not move normally.",
+      "alternatives": ["pec-deck"], "sources": [{"title": "ACE Seated Chest Press", "url": "https://www.acefitness.org/resources/everyone/exercise-library/188/seated-chest-press/"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "pec-deck", "name": "Pec deck fly", "equipment": "Selectorized pec deck", "location": "Floor 1 · Push zone",
+      "primary_muscle_group": "chest", "secondary_muscle_groups": ["shoulders"], "muscles": "Chest and front shoulders",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 180, "weight_step_lb": 5,
+      "setup": "Set the seat so your upper arms meet the pads near chest height and keep your back against the pad.", "cue": "Bring the pads together in a controlled arc and return only through a comfortable range.", "mistake": "Avoid bouncing the stack, rounding forward, or forcing the arms too far behind the body.",
+      "troubleshooting": "If your shoulders rise, lower the load and reset the seat. Ask gym staff if the start-position adjustment is unfamiliar.", "stop_conditions": "Stop for sharp shoulder or chest pain, numbness, dizziness, or damaged pads/cables.",
+      "alternatives": ["chest-press"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "lat-pulldown", "name": "Lat pulldown", "equipment": "Selectorized lat pulldown", "location": "Floor 1 · Pull zone",
+      "primary_muscle_group": "back", "secondary_muscle_groups": ["biceps"], "muscles": "Latissimus dorsi, upper back, and biceps",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 250, "weight_step_lb": 5,
+      "setup": "Secure the thigh pad, grasp the bar evenly, brace your torso, and lean back only slightly.", "cue": "Draw your elbows down toward your sides and return the bar overhead with control.", "mistake": "Avoid pulling behind your neck, swinging backward, or driving the elbows behind the torso.", "troubleshooting": "If you lift out of the seat, tighten the thigh pad or reduce the load.", "stop_conditions": "Stop for sharp shoulder, neck, or back pain, numbness, dizziness, or a frayed cable.",
+      "alternatives": ["seated-row"], "sources": [{"title": "ACE Seated Lat Pulldown", "url": "https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/"}, {"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "seated-row", "name": "Seated row", "equipment": "Selectorized seated row", "location": "Floor 1 · Pull zone",
+      "primary_muscle_group": "back", "secondary_muscle_groups": ["biceps"], "muscles": "Upper back, latissimus dorsi, and biceps",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 250, "weight_step_lb": 5,
+      "setup": "Adjust the seat or chest support so you can reach the handles without rounding your back.", "cue": "Keep your torso steady, pull the elbows back, and return until the arms are long without losing posture.", "mistake": "Avoid swinging your torso, shrugging, or letting the weight stack slam.", "troubleshooting": "If the handles are out of reach, adjust the seat rather than rounding forward.", "stop_conditions": "Stop for sharp shoulder or back pain, numbness, dizziness, or abnormal cable movement.",
+      "alternatives": ["lat-pulldown"], "sources": [{"title": "Hammer Strength Select Seated Row", "url": "https://www.lifefitness.com/en-us/catalog/strength-training/selectorized/hammer-strength-select-seated-row"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "shoulder-press", "name": "Shoulder press", "equipment": "Selectorized shoulder press", "location": "Floor 1 · Push zone",
+      "primary_muscle_group": "shoulders", "secondary_muscle_groups": ["triceps"], "muscles": "Shoulders and triceps",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 180, "weight_step_lb": 5,
+      "setup": "Set the seat so the handles begin near shoulder height and keep your head and back supported.", "cue": "Press upward smoothly, stop before elbow lockout, and lower with control.", "mistake": "Avoid arching your low back, shrugging, or forcing a painful overhead range.", "troubleshooting": "If the start position feels cramped, adjust the seat or use a lighter load.", "stop_conditions": "Stop for sharp shoulder or neck pain, numbness, dizziness, or unstable handles.",
+      "alternatives": ["lateral-raise"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "lateral-raise", "name": "Lateral raise", "equipment": "Selectorized lateral raise", "location": "Floor 1 · Shoulder bay",
+      "primary_muscle_group": "shoulders", "secondary_muscle_groups": [], "muscles": "Side shoulders",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 120, "weight_step_lb": 5,
+      "setup": "Set the seat so the machine pivots align near your shoulders and place your arms against the pads.", "cue": "Raise the pads smoothly to a comfortable height and lower without dropping the stack.", "mistake": "Avoid shrugging, jerking, or lifting through shoulder pain.", "troubleshooting": "If your neck takes over, reduce the load and keep the shoulders down.", "stop_conditions": "Stop for sharp shoulder or neck pain, tingling, dizziness, or damaged pads.",
+      "alternatives": ["shoulder-press", "reverse-fly"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "reverse-fly", "name": "Reverse fly", "equipment": "Selectorized rear-delt fly", "location": "Floor 1 · Shoulder bay",
+      "primary_muscle_group": "shoulders", "secondary_muscle_groups": ["back"], "muscles": "Rear shoulders and upper back",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 150, "weight_step_lb": 5,
+      "setup": "Face the pad, adjust the seat so the handles are near shoulder height, and keep your chest supported.", "cue": "Open your arms in a controlled arc while keeping the shoulders down.", "mistake": "Avoid arching, shrugging, or using momentum to throw the handles back.", "troubleshooting": "If you cannot keep chest contact, reduce the load or adjust the seat.", "stop_conditions": "Stop for sharp shoulder or upper-back pain, numbness, dizziness, or loose handles.",
+      "alternatives": ["lateral-raise"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "arm-curl", "name": "Arm curl", "equipment": "Selectorized biceps curl", "location": "Floor 1 · Arm bay",
+      "primary_muscle_group": "biceps", "secondary_muscle_groups": [], "muscles": "Biceps",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 120, "weight_step_lb": 5,
+      "setup": "Adjust the seat so your upper arms rest fully on the pad and the elbow joint lines up with the pivot.", "cue": "Curl without lifting your upper arms, then lower until the elbows are comfortably extended.", "mistake": "Avoid rocking, lifting the elbows, or dropping the weight on the return.", "troubleshooting": "If the pad edge presses into the elbow, change the seat position before continuing.", "stop_conditions": "Stop for sharp elbow or wrist pain, numbness, dizziness, or a sticking lever.",
+      "alternatives": [], "sources": [{"title": "Cybex Eagle NX Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360037406593-Cybex-Eagle-NX-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "triceps-press", "name": "Triceps press", "equipment": "Selectorized triceps press", "location": "Floor 1 · Arm bay",
+      "primary_muscle_group": "triceps", "secondary_muscle_groups": ["chest"], "muscles": "Triceps and chest",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 180, "weight_step_lb": 5,
+      "setup": "Set the seat so your feet are stable and you can grip the handles with shoulders relaxed.", "cue": "Press the handles down by extending the elbows and return slowly.", "mistake": "Avoid shrugging, bouncing out of the bottom, or locking the elbows hard.", "troubleshooting": "If your shoulders rise, reduce the load and reset your seat and grip.", "stop_conditions": "Stop for sharp elbow, shoulder, or chest pain, dizziness, or unstable handles.",
+      "alternatives": [], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "leg-press", "name": "Seated leg press", "equipment": "Selectorized seated leg press", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "quadriceps", "secondary_muscle_groups": ["glutes", "hamstrings", "calves"], "muscles": "Quadriceps, glutes, hamstrings, and calves",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 10, "weight_max_lb": 400, "weight_step_lb": 5,
+      "setup": "Place your feet about shoulder-width on the platform and adjust the seat for roughly a right-angle knee bend.", "cue": "Push through planted feet, stop short of locking the knees, and return no deeper than you can control.", "mistake": "Avoid knees collapsing inward, heels lifting, or your low back rounding off the pad.", "troubleshooting": "If your hips roll off the pad, shorten the return range or move the seat back.", "stop_conditions": "Stop for sharp knee, hip, or back pain, dizziness, numbness, or a platform that catches.",
+      "alternatives": ["leg-extension"], "sources": [{"title": "ACE Seated Leg Press", "url": "https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/"}, {"title": "Mayo Clinic Seated Leg Press", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/multimedia/leg-press/vid-20084684"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "leg-extension", "name": "Leg extension", "equipment": "Selectorized leg extension", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "quadriceps", "secondary_muscle_groups": [], "muscles": "Quadriceps",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 200, "weight_step_lb": 5,
+      "setup": "Align the machine pivot with your knee and place the roller above the ankle with about a right-angle knee bend.", "cue": "Extend until the knees are nearly straight, then return fully and smoothly.", "mistake": "Avoid locking the knees, kicking the pad, or using a shortened return.", "troubleshooting": "If the roller presses on the ankle or shin, adjust its position before lifting.", "stop_conditions": "Stop for sharp knee pain, catching, dizziness, numbness, or a loose roller.",
+      "alternatives": ["leg-press"], "sources": [{"title": "Mayo Clinic Knee Extension", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/multimedia/knee-extension/vid-20084686"}, {"title": "Cybex Eagle NX Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360037406593-Cybex-Eagle-NX-Owner-s-Manuals"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "seated-leg-curl", "name": "Seated leg curl", "equipment": "Selectorized seated leg curl", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "hamstrings", "secondary_muscle_groups": [], "muscles": "Hamstrings",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 200, "weight_step_lb": 5,
+      "setup": "Align your knees with the pivot, secure the thigh pad, and place the lower roller above the heels.", "cue": "Curl the roller down smoothly, keep your hips against the seat, and return with control.", "mistake": "Avoid lifting the hips, jerking the roller, or forcing the knees beyond a comfortable angle.", "troubleshooting": "If the thigh pad shifts or the pivot does not align, stop and readjust the machine.", "stop_conditions": "Stop for sharp knee or hamstring pain, cramping that does not ease, dizziness, or a loose pad.",
+      "alternatives": [], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "glute-kickback", "name": "Glute kickback", "equipment": "Selectorized glute machine", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "glutes", "secondary_muscle_groups": ["hamstrings"], "muscles": "Glutes and hamstrings",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 180, "weight_step_lb": 5,
+      "setup": "Use the support handles, place the working foot on the pedal, and keep your pelvis square.", "cue": "Drive the pedal back through a comfortable range without twisting, then return slowly.", "mistake": "Avoid arching your back, rotating your hips, or kicking with momentum.", "troubleshooting": "If you feel mostly low-back effort, reduce the range and load and brace your torso.", "stop_conditions": "Stop for sharp hip or back pain, dizziness, numbness, or an unstable support.",
+      "alternatives": ["hip-abduction"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "hip-abduction", "name": "Hip abduction", "equipment": "Selectorized hip abductor", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "glutes", "secondary_muscle_groups": [], "muscles": "Outer hips and glutes",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 200, "weight_step_lb": 5,
+      "setup": "Sit with your back supported, place the outer thighs against the pads, and choose a comfortable start position.", "cue": "Press the knees apart smoothly while keeping your torso still, then return under control.", "mistake": "Avoid bouncing, leaning forward to create momentum, or forcing a wide range.", "troubleshooting": "If the pads press on the knees, reposition them on the thighs or ask staff for help.", "stop_conditions": "Stop for sharp hip or groin pain, dizziness, numbness, or pads that do not lock.",
+      "alternatives": ["glute-kickback"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "seated-calf-raise", "name": "Seated calf raise", "equipment": "Selectorized calf machine", "location": "Floor 1 · Lower-body zone",
+      "primary_muscle_group": "calves", "secondary_muscle_groups": [], "muscles": "Calves",
+      "sets": 2, "reps": 12, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 250, "weight_step_lb": 5,
+      "setup": "Place the balls of your feet on the platform, secure the thigh pad, and keep your heels free to move.", "cue": "Raise your heels smoothly, pause, and lower through a comfortable stretch without bouncing.", "mistake": "Avoid rolling the ankles, bouncing at the bottom, or letting the feet slip.", "troubleshooting": "If the thigh pad lifts, adjust it closer or reduce the load.", "stop_conditions": "Stop for sharp ankle, Achilles, or calf pain, dizziness, cramping that persists, or a loose pad.",
+      "alternatives": [], "sources": [{"title": "Cybex Eagle NX Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360037406593-Cybex-Eagle-NX-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "abdominal-crunch", "name": "Abdominal crunch", "equipment": "Selectorized abdominal machine", "location": "Floor 1 · Core zone",
+      "primary_muscle_group": "core", "secondary_muscle_groups": [], "muscles": "Abdominals",
+      "sets": 2, "reps": 12, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 150, "weight_step_lb": 5,
+      "setup": "Adjust the seat and pads so the machine's pivot matches your torso and your feet remain stable.", "cue": "Brace, curl the ribs toward the pelvis through a small controlled range, and return slowly.", "mistake": "Avoid pulling with your arms, jerking, or forcing your neck forward.", "troubleshooting": "If you feel neck strain, reduce the load and keep your head aligned with your torso.", "stop_conditions": "Stop for sharp neck, abdominal, or back pain, dizziness, nausea, or a loose restraint.",
+      "alternatives": ["torso-rotation", "back-extension"], "sources": [{"title": "Cybex Eagle NX Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360037406593-Cybex-Eagle-NX-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "torso-rotation", "name": "Torso rotation", "equipment": "Selectorized torso rotation", "location": "Floor 1 · Core zone",
+      "primary_muscle_group": "core", "secondary_muscle_groups": [], "muscles": "Obliques and trunk stabilizers",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 120, "weight_step_lb": 5,
+      "setup": "Set a modest start angle, secure the pads, and keep your hips and knees aligned with the machine.", "cue": "Rotate through a comfortable trunk range without bouncing, then return slowly.", "mistake": "Avoid forcing the end range, twisting the knees, or using momentum.", "troubleshooting": "If the pelvis moves with the torso, reduce the range and reset the supports.", "stop_conditions": "Stop for sharp back or abdominal pain, dizziness, numbness, or restraints that do not secure.",
+      "alternatives": ["abdominal-crunch", "back-extension"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Strength Training", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/strength-training/art-20046670"}], "review_status": "professional_review_pending"
+    },
+    {
+      "id": "back-extension", "name": "Back extension", "equipment": "Selectorized back extension", "location": "Floor 1 · Core zone",
+      "primary_muscle_group": "core", "secondary_muscle_groups": ["glutes"], "muscles": "Lower back and glutes",
+      "sets": 2, "reps": 10, "rest_seconds": 60, "weight_min_lb": 5, "weight_max_lb": 180, "weight_step_lb": 5,
+      "setup": "Adjust the back pad and foot supports so the machine pivot aligns with your hips.", "cue": "Extend only to a neutral upright position, then return with control.", "mistake": "Avoid hyperextending, jerking, or driving through a painful low-back range.", "troubleshooting": "If the pad presses uncomfortably or the hips shift, stop and readjust the seat and supports.", "stop_conditions": "Stop for sharp or radiating back pain, numbness, dizziness, or supports that do not lock.",
+      "alternatives": ["abdominal-crunch", "torso-rotation"], "sources": [{"title": "Cybex Prestige Owner's Manuals", "url": "https://support.lifefitness.com/hc/en-us/articles/360036924674-Cybex-Prestige-Owner-s-Manuals"}, {"title": "Mayo Clinic Weight Training Technique", "url": "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/weight-training/art-20045842"}], "review_status": "professional_review_pending"
+    }
+  ],
+  "routines": [
+    {
+      "id": "full-body",
+      "name": "Full body foundations",
+      "description": "Compatibility routine used when a customized muscle plan is not supplied.",
+      "exercise_ids": ["chest-press", "seated-row", "leg-extension"]
+    }
+  ],
+  "content_status": "Source-backed, developer-paraphrased demo guidance. Professional review pending. Follow each machine placard and ask qualified gym staff when uncertain."
 }
