@@ -246,3 +246,7 @@ Technical references:
 - https://elevenlabs.io/docs/eleven-agents/customization/tools/client-tools
 
 Acceptance tracker to create in `docs/VALIDATION.md`: Stage | Owner | Environment | Check | Expected | Actual | PASS/FAIL | Evidence | Open blocker. All checks initially NOT RUN. Record web, native simulator and physical-device evidence separately.
+
+## Scope addition — Spanish trainer, October 11, 2026
+
+User requested English/Spanish spoken coaching selection in trainer customization. Persist the selection in trainer preferences, default legacy data to English, and use the session preference for greetings/reconnections. Menus remain English. Live provider activation and bilingual voice acceptance are separate from local implementation checks; see agent/README.md and docs/VALIDATION.md.

@@ -40,6 +40,7 @@ class TrainerPersona(StrictModel):
     accessory: Literal["headband", "headphones", "none"] = "headband"
     motivation: str = Field(default="", max_length=240)
     remind: bool = True
+    language: Literal["en", "es"] = "en"
 
 
 class Preferences(StrictModel):

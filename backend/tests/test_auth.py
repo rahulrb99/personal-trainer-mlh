@@ -83,9 +83,10 @@ def test_trainer_persona_survives_profile_login_and_workout(google_client):
     login = google_client.post('/auth/google', json={'id_token': 'valid-google-id-token-value'}).json()
     headers = {'Authorization': f"Bearer {login['access_token']}"}
     persona = {'name': 'Pip', 'color': 'mint', 'expression': 'calm', 'accessory': 'headphones',
-               'motivation': 'More energy for my day.', 'remind': True}
+               'motivation': 'More energy for my day.', 'remind': True, 'language': 'es'}
     profile = login['profile']
     assert profile['preferences']['trainer']['name'] == 'Mat'
+    assert profile['preferences']['trainer']['language'] == 'en'
     update = {key: profile[key] for key in ('name', 'preferences', 'muscle_group_ids', 'plan')}
     update['preferences']['trainer'] = persona
     saved = google_client.put('/profile', headers=headers, json=update)
@@ -100,7 +101,15 @@ def test_trainer_persona_survives_profile_login_and_workout(google_client):
     assert restored.json()['version'] == 1
 
 
-@pytest.mark.parametrize('change', [{'color': 'unknown'}, {'motivation': 'x' * 241}, {'name': ''}, {'accessory': 'unknown'}])
+@pytest.mark.parametrize('change', [{'language': 'fr'}, {'color': 'unknown'}, {'motivation': 'x' * 241}, {'name': ''}, {'accessory': 'unknown'}])
 def test_trainer_persona_rejects_invalid_input(google_client, change):
     response = google_client.post('/sessions', json={'preferences': {'trainer': change}})
     assert response.status_code == 422
+
+
+def test_legacy_trainer_defaults_to_english(google_client):
+    created = google_client.post('/sessions', json={'preferences': {'trainer': {'name': 'Legacy'}}})
+    assert created.status_code == 201
+    session = created.json()
+    restored = google_client.get(f"/sessions/{session['snapshot']['session_id']}", headers={'Authorization': f"Bearer {session['access_token']}"})
+    assert restored.json()['preferences']['trainer']['language'] == 'en'

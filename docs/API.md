@@ -75,3 +75,7 @@ The existing `submit_workout_action` tool adds optional numeric `weight_lb` and 
 After completion with another set remaining, the decision offers a conditional catalog-step increase only when weight is known, within range, and at most 10% of the current load. It does not infer comfort or change weight automatically. Otherwise keep weight or ask for a total. The live agent must suppress progression suggestions after pain/difficulty reports and acknowledge mutations only after success. This is pending professional content review, not a certified prescription. Review background: https://pubmed.ncbi.nlm.nih.gov/19204579/ and https://acsm.org/resistance-training-guidelines-update-2026/ .
 
 Provider configuration requirement: update the published Mat system prompt from `agent/prompt.md` and the existing client action tool from `agent/tools.json` before voice acceptance testing. Keep all three tools waiting for responses. These repo edits do not automatically publish the dashboard agent.
+
+### Trainer language
+
+`preferences.trainer.language` accepts `en` (English) and `es` (Spanish), defaulting to `en` when absent in old profiles, requests or persisted sessions. Profile updates and new workouts preserve the selection; unsupported codes return HTTP 422. This additive schema-version-1 field does not change workout events or units. The watch decoder ignores unused trainer preferences; no watch speech or menu translation is introduced. Voice startup uses the saved workout selection. See `agent/README.md` for required provider settings.

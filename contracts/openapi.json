@@ -1382,6 +1382,15 @@
             "type": "boolean",
             "title": "Remind",
             "default": true
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "es"
+            ],
+            "title": "Language",
+            "default": "en"
           }
         },
         "additionalProperties": false,

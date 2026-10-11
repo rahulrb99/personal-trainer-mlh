@@ -645,6 +645,15 @@
           "default": true,
           "title": "Remind",
           "type": "boolean"
+        },
+        "language": {
+          "default": "en",
+          "enum": [
+            "en",
+            "es"
+          ],
+          "title": "Language",
+          "type": "string"
         }
       },
       "title": "TrainerPersona",

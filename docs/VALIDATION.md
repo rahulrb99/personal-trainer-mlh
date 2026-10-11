@@ -1,5 +1,13 @@
 # Validation record
 
+## English / Spanish trainer — October 11, 2026
+
+User-authorized local implementation across mobile, backend and agent contract: trainer customization offers English/Español; `preferences.trainer.language` persists to profile and workout, defaults to English for legacy data, and rejects unsupported codes. Shared web/native voice startup sends language and localized first-message overrides on each connection; prompt/context preserve language for guidance, reminders and external-event announcements. Existing session preferences stay fixed; edits apply to the next workout. Menus remain English. Existing choice-button design is reused.
+
+Mac validation: `npm run typecheck` PASS; `npm run lint` PASS; `npm run export:web` PASS (four routes; upstream Three.js and color-environment warnings). `.venv/bin/python -m pytest backend/tests -q`: 57 passed before the additional legacy-language test; targeted final `.venv/bin/python -m pytest backend/tests/test_auth.py -q`: 10 passed, including that new test. One upstream AnyIO deprecation warning. `scripts/export_contracts.py` and `git diff --check` PASS. Coverage checks Spanish across save/login/session readback, English defaulting and rejection of unsupported languages. Watch ignores these unused preferences; no watch schema change required.
+
+NOT RUN: visual browser/native walkthrough and live English/Spanish microphone, speech, command mapping, reconnection and event announcements. Provider configuration was not changed or published. Agent owner must enable Spanish with a compatible voice/model, enable Language and First message overrides, and apply the updated prompt as documented in agent/README.md before live testing. No commits, pushes or deployments.
+
 ## Persisted set timing and confirmed weight changes — October 11, 2026
 
 Owner: Windows assistant, explicit human assignment across backend/shared UI/agent/watch consumers. Equipment confirmation starts the authoritative UTC set timer; set completion stops it and stores index, start/end, elapsed seconds, planned reps and that set's weight atomically in SQLite history. Rest expiry starts the next timer at its persisted deadline. Skip/end does not invent completed work. Legacy timing remains unavailable. New weight_updated action takes exactly one absolute/increase pound value with the current target; range/increment/phase/version validation and event deduplication apply. Previous records retain their original weights.
@@ -215,3 +223,9 @@ Opening-cue tone follow-up: replaced the read-aloud script with a request to nat
 ## Pull integration — October 11, 2026
 
 Merged Rahul’s `50b4437` set-timer/confirmed-weight work with local trainer-persona commits. Preserved both prompt sections, API fields, avatar/encouragement, set tracking/history, and confirmed weight actions; regenerated contracts from merged models. PASS: backend pytest (56 tests), mobile typecheck, lint, reminder-state checks, and web export. Native/live voice checks were not repeated for this merge.
+
+## Intentional voice disconnect popup — October 11, 2026
+
+User requested removal of the LiveKit signal-stream error popup on Disconnect voice. The app marks the conversation before intentional disconnect (including workout completion); for ten seconds, only that room's exact signal-stream WebSocket ConnectionError is logged at info instead of error, keeping it out of Expo's error overlay. Other rooms/errors and SDK error handling remain unchanged. No console monkey-patch, global LogBox suppression, or dependency edits. End-session promise failures surface an actionable inline error.
+
+PASS: mobile typecheck and lint; focused logger harness confirms intentional hangup is informational while other rooms, messages and error types retain error reporting. Live browser/native disconnect and reconnect NOT RUN; reload the app to pick up the logging change.

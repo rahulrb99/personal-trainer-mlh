@@ -35,6 +35,7 @@ export const trainerPersonaSchema = z.object({
   name: z.string().min(1).max(30).default('Mat'), color: z.enum(['blue', 'mint', 'peach']).default('blue'),
   expression: z.enum(['happy', 'calm', 'bold']).default('happy'), accessory: z.enum(['headband', 'headphones', 'none']).default('headband'),
   motivation: z.string().max(240).default(''), remind: z.boolean().default(true),
+  language: z.enum(['en', 'es']).default('en'),
 });
 export type TrainerPersona = z.infer<typeof trainerPersonaSchema>;
 export const defaultTrainer = trainerPersonaSchema.parse({});

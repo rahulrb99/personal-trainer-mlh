@@ -29,12 +29,14 @@ export function motivationGreeting(user: string) {
 export function TrainerPersonaEditor({ value, onSave, onCancel, saving, error, signedIn }: { value: TrainerPersona; onSave: (value: TrainerPersona) => void; onCancel: () => void; saving: boolean; error: string | null; signedIn: boolean }) {
   const [draft, setDraft] = useState(value);
   const set = <K extends keyof TrainerPersona>(key: K, value: TrainerPersona[K]) => setDraft(previous => ({ ...previous, [key]: value }));
-  function choices<K extends 'color' | 'expression' | 'accessory'>(key: K, values: TrainerPersona[K][]) {
-    return <View style={s.row}>{values.map(value => <Pressable key={value} accessibilityRole="button" accessibilityLabel={`${key}: ${value}`} accessibilityState={{ selected: draft[key] === value }} onPress={() => set(key, value)} style={[s.choice, draft[key] === value && s.selected]}>{key === 'color' && <View style={[s.swatch, { backgroundColor: palette[value as TrainerPersona['color']] }]} />}<Text style={s.choiceText}>{value.charAt(0).toUpperCase() + value.slice(1)}</Text></Pressable>)}</View>;
+  function choices<K extends 'color' | 'expression' | 'accessory' | 'language'>(key: K, values: TrainerPersona[K][]) {
+    return <View style={s.row}>{values.map(value => <Pressable key={value} accessibilityRole="button" accessibilityLabel={`${key}: ${value}`} accessibilityState={{ selected: draft[key] === value }} onPress={() => set(key, value)} style={[s.choice, draft[key] === value && s.selected]}>{key === 'color' && <View style={[s.swatch, { backgroundColor: palette[value as TrainerPersona['color']] }]} />}<Text style={s.choiceText}>{key === 'language' ? value === 'es' ? 'Español' : 'English' : value.charAt(0).toUpperCase() + value.slice(1)}</Text></Pressable>)}</View>;
   }
   return <View style={s.panel}>
     <View style={s.row}><TrainerAvatar trainer={draft} size={140} /><View style={s.intro}><Text style={s.title}>Meet your trainer.</Text><Text style={s.body}>A little personality. A reason to show up. Make this companion yours.</Text></View></View>
     <Text style={s.label}>Trainer’s name</Text><TextInput accessibilityLabel="Trainer’s name" maxLength={30} value={draft.name} onChangeText={value => set('name', value)} style={s.input} placeholder="Mat" />
+    <Text style={s.label}>Trainer language</Text>{choices('language', ['en', 'es'])}
+    <Text style={s.body}>Your trainer speaks this language. App menus stay in English.</Text>
     <Text style={s.label}>Color</Text>{choices('color', ['blue', 'mint', 'peach'])}
     <Text style={s.label}>Expression</Text>{choices('expression', ['happy', 'calm', 'bold'])}
     <Text style={s.label}>Accessory</Text>{choices('accessory', ['headband', 'headphones', 'none'])}
