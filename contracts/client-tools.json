@@ -46,7 +46,8 @@
             "retry_deferred",
             "alternative_accepted",
             "alternative_declined",
-            "end_session"
+            "end_session",
+            "weight_updated"
           ],
           "title": "Action",
           "type": "string"
@@ -77,6 +78,38 @@
           "default": null,
           "description": "Current 1-based set index. Omit for end_session or retry_deferred.",
           "title": "Set Index"
+        },
+        "weight_lb": {
+          "anyOf": [
+            {
+              "maximum": 500,
+              "minimum": 5,
+              "multipleOf": 5,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit user-selected new total pounds. Only for weight_updated; do not combine with an increase.",
+          "title": "Weight Lb"
+        },
+        "weight_increase_lb": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 500,
+              "multipleOf": 5,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit user-selected increase in pounds, e.g. 5 for 'increase by 5 lb'. Only for weight_updated.",
+          "title": "Weight Increase Lb"
         }
       },
       "required": [

@@ -9,7 +9,8 @@
         "retry_deferred",
         "alternative_accepted",
         "alternative_declined",
-        "end_session"
+        "end_session",
+        "weight_updated"
       ],
       "title": "Action",
       "type": "string"
@@ -67,7 +68,7 @@
     },
     "payload": {
       "additionalProperties": {
-        "type": "string"
+        "type": "integer"
       },
       "title": "Payload",
       "type": "object"

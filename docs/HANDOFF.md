@@ -1,5 +1,13 @@
 # Initial implementation handoff
 
+## Set timer and confirmed weights — October 11
+
+Explicit scope assignment implemented persisted set_started_at and per-exercise set_records (timestamps, duration, planned reps, weight). Equipment confirmation starts set 1; the rest deadline starts subsequent sets. Completion stops/saves; skip/end does not fabricate a completed record. Added weight_updated with exactly one weight_lb/weight_increase_lb payload and current instance/set validation. Completed histories retain their original weights; unknown-baseline increases are rejected. Legacy records/timing are not reconstructed.
+
+Changed: backend engine/models/store/tool contract and new test_set_tracking.py; generated contracts/tools and contracts/examples/set-tracking.json; shared client schema/API/session clock, trainer, new set-tracking.tsx, voice types/handler; watch Codable fields/timer/history; prompt/runbooks. Schema version 1 remains additive for output. Apply the new optional weight arguments and enum to the published Mat client tool and paste the updated prompt before voice testing. No provider mutation performed.
+
+Checks: contract export PASS, backend **51 passed** (one upstream warning), mobile typecheck/lint/web export PASS. Windows button walkthrough passes timer, saved 5.6s at 50 lb, suggestion, explicit increase to 55 lb, immutable prior record and refresh. Next Mac action: native compile/timer checks and spoken found-machine → set-done → increase-by-5lb scenario after provider configuration. No microphone/native acceptance or publication claim. Production preview uses an ignored test HTTP helper for exported routes; the known local Expo development install issue remains separate. Exact checks are in docs/VALIDATION.md.
+
 ## Google-first landing page — October 11
 
 Web now opens a themed landing page with the official Google popup sign-in button. After backend verification, the trainer displays a first-name welcome and opens saved setup/plan or an existing session. Sign-out clears setup drafts and returns to the landing page. Changed client files: `mobile/src/screens/landing-screen.tsx`, `mobile/src/screens/trainer-screen.tsx`, `mobile/src/auth/google-sign-in.web.tsx`; existing profile/backend work preserved and no contract change. Native Google auth remains pending; native development setup and browser watch session pairing are retained.

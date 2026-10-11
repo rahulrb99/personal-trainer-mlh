@@ -1,7 +1,7 @@
 """Canonical client-tool argument schemas; not a second tool execution engine."""
 from pydantic import Field, model_validator
 
-from backend.models import Action, StrictModel
+from backend.models import Action, StrictModel, WeightChange
 
 
 class GetSessionState(StrictModel):
@@ -16,11 +16,17 @@ class SubmitWorkoutAction(StrictModel):
     action: Action
     exercise_instance_id: str | None = Field(default=None, description="Current instance_id. Omit for end_session or retry_deferred.")
     set_index: int | None = Field(default=None, ge=1, description="Current 1-based set index. Omit for end_session or retry_deferred.")
+    weight_lb: int | None = Field(default=None, ge=5, le=500, multiple_of=5, strict=True, description="Explicit user-selected new total pounds. Only for weight_updated; do not combine with an increase.")
+    weight_increase_lb: int | None = Field(default=None, gt=0, le=500, multiple_of=5, strict=True, description="Explicit user-selected increase in pounds, e.g. 5 for 'increase by 5 lb'. Only for weight_updated.")
 
     @model_validator(mode="after")
     def require_exercise_target(self):
         if self.action not in {Action.END, Action.RETRY} and (not self.exercise_instance_id or self.set_index is None):
             raise ValueError("Exercise actions require current instance and set index")
+        if self.action == Action.WEIGHT:
+            WeightChange(weight_lb=self.weight_lb, weight_increase_lb=self.weight_increase_lb)
+        elif self.weight_lb is not None or self.weight_increase_lb is not None:
+            raise ValueError("Weight arguments are only valid for weight_updated")
         return self
 
 

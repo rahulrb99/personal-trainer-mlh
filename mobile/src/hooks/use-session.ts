@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError, streamUrl } from '@/api/client';
-import { Action, Credentials, PlannedExercise, Preferences, Snapshot, snapshotSchema } from '@/api/schema';
+import { Action, Credentials, PlannedExercise, Preferences, Snapshot, WeightChange, snapshotSchema } from '@/api/schema';
 import { loadSession, saveSession } from '@/api/session-storage';
 
 type ConnectionState = 'Connecting' | 'Live' | 'Reconnecting' | 'Offline';
@@ -14,6 +14,7 @@ export function useSession() {
   const [pending, setPending] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>('Connecting');
   const [restSeconds, setRestSeconds] = useState(0);
+  const [setSeconds, setSetSeconds] = useState(0);
   const current = useRef<Snapshot | null>(null);
   const busy = useRef(false);
   const offset = useRef(0);
@@ -24,6 +25,7 @@ export function useSession() {
 
     offset.current = Date.parse(state.server_time) - Date.now();
     setRestSeconds(state.rest_deadline ? Math.max(0, Math.ceil((Date.parse(state.rest_deadline) - Date.now() - offset.current) / 1000)) : 0);
+    setSetSeconds(state.phase === 'exercising' && state.set_started_at ? Math.max(0, Math.floor((Date.now() + offset.current - Date.parse(state.set_started_at)) / 1000)) : 0);
     current.current = state;
     setSnapshot(state);
     return true;
@@ -141,17 +143,20 @@ export function useSession() {
   }, [credentials, accept]);
 
   useEffect(() => {
-    const timer = setInterval(() => setRestSeconds(snapshot?.rest_deadline ? Math.max(0, Math.ceil((Date.parse(snapshot.rest_deadline) - Date.now() - offset.current) / 1000)) : 0), 250);
+    const timer = setInterval(() => {
+      setRestSeconds(snapshot?.rest_deadline ? Math.max(0, Math.ceil((Date.parse(snapshot.rest_deadline) - Date.now() - offset.current) / 1000)) : 0);
+      setSetSeconds(snapshot?.phase === 'exercising' && snapshot.set_started_at ? Math.max(0, Math.floor((Date.now() + offset.current - Date.parse(snapshot.set_started_at)) / 1000)) : 0);
+    }, 250);
     return () => clearInterval(timer);
-  }, [snapshot?.rest_deadline]);
+  }, [snapshot?.rest_deadline, snapshot?.set_started_at, snapshot?.phase]);
 
-  const act = useCallback(async (type: Action, source: 'web' | 'watch' | 'voice' = 'web', target?: { exercise_instance_id: string; set_index: number | null }) => {
+  const act = useCallback(async (type: Action, source: 'web' | 'watch' | 'voice' = 'web', target?: { exercise_instance_id: string; set_index: number | null }, payload?: WeightChange) => {
     if (!credentials || !current.current) throw new Error('Start or join a workout first.');
     if (busy.current) throw new Error('Another action is awaiting confirmation.');
     const state = current.current;
     if (target && (state.current?.instance_id !== target.exercise_instance_id || state.set_index !== target.set_index)) throw new Error('The spoken action targets an old exercise or set. Ask Mat for the current state.');
     busy.current = true; setPending(true); setError(null);
-    try { const result = await api.event(credentials, state, type, source); accept(result.snapshot); return result.snapshot; }
+    try { const result = await api.event(credentials, state, type, source, payload); accept(result.snapshot); return result.snapshot; }
     catch (failure) { if (failure instanceof ApiError && failure.snapshot) accept(failure.snapshot); setError(failure instanceof Error ? failure.message : 'Action failed'); throw failure; }
     finally { busy.current = false; setPending(false); }
   }, [credentials, accept]);
@@ -165,5 +170,5 @@ export function useSession() {
 
   async function reset() { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); setError(null); setConnection('Offline'); }
   async function join(c: Credentials) { const state = await api.snapshot(c); await saveSession(c); accept(state); setCredentials(c); }
-  return { credentials, snapshot, error, pending, connection, restSeconds, start, reset, join, act };
+  return { credentials, snapshot, error, pending, connection, restSeconds, setSeconds, start, reset, join, act };
 }

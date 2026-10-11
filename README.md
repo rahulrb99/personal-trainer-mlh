@@ -89,3 +89,8 @@ Scope excludes music, sensors, dashboard, automatic form/rep detection and physi
 ## Native Apple Watch simulator (Stage 5)
 
 The standalone SwiftUI app is in [`watch/`](watch/README.md). Build/run instructions and the existing manual session-ID/token pairing flow are documented there. On the phone use **Pair watch controls**; enter those credentials in the watch's **Join your workout** form. Watch build and join-screen launch are verified; paired workout actions, phone speech and recovery acceptance are still pending in [`docs/VALIDATION.md`](docs/VALIDATION.md).
+
+
+### Set timer and weight changes
+
+Confirming equipment starts a visible set timer. Set done stores each set's elapsed time and weight in the session and summary. Rests stop the timer; the next timer starts at rest expiry. You can explicitly change the current/next set's total pounds or confirm an increase without rewriting completed sets. Mat's updated local prompt maps found-machine and weight-change phrases; apply agent/prompt.md and the new weight_updated enum plus optional weight_lb/weight_increase_lb arguments from agent/tools.json to the published ElevenLabs agent before live voice testing. Browser buttons and backend timing/history are verified; new live voice/native checks remain pending.

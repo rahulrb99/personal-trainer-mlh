@@ -5,6 +5,7 @@ import type { useConversation as useWebConversation } from '@elevenlabs/react';
 import { ActionButton } from '@/components/action-button';
 import { api, ApiError } from '@/api/client';
 import { actionSchema } from '@/api/schema';
+import type { WeightChange } from '@/api/schema';
 import type { VoiceProps } from './types';
 import { colors } from '@/theme';
 
@@ -53,12 +54,21 @@ function VoiceControls({ credentials, snapshot, act, useConversation }: VoicePro
       submit_workout_action: async (value: unknown) => {
         processingTool.current = true;
         try {
-          const args = z.object({ action: actionSchema, exercise_instance_id: z.string().nullable().default(null), set_index: z.number().int().positive().nullable().default(null) }).parse(value);
+          const weightValue = z.number().int().positive().max(500).multipleOf(5).nullable().default(null);
+          const args = z.object({ action: actionSchema, exercise_instance_id: z.string().nullable().default(null), set_index: z.number().int().positive().nullable().default(null), weight_lb: weightValue, weight_increase_lb: weightValue }).strict().parse(value);
+          let payload: WeightChange | undefined;
+          if (args.action === 'weight_updated') {
+            if ((args.weight_lb === null) === (args.weight_increase_lb === null)) return JSON.stringify({ success: false, error: 'Specify exactly one user-confirmed total weight or increase in pounds.' });
+            if (args.weight_lb !== null) payload = { weight_lb: args.weight_lb };
+            else if (args.weight_increase_lb !== null) payload = { weight_increase_lb: args.weight_increase_lb };
+          } else if (args.weight_lb !== null || args.weight_increase_lb !== null) {
+            return JSON.stringify({ success: false, error: 'Weight arguments require weight_updated.' });
+          }
           const fresh = latest.current;
           const sessionAction = args.action === 'end_session' || args.action === 'retry_deferred';
           if (sessionAction && (args.exercise_instance_id !== null || args.set_index !== null)) return JSON.stringify({ success: false, error: 'Session-level actions must omit exercise targets.' });
           if (!sessionAction && (!fresh.current || args.exercise_instance_id !== fresh.current.instance_id || args.set_index !== fresh.set_index)) return JSON.stringify({ success: false, error: 'Missing or stale target. Call get_session_state and ask user again.' });
-          const result = await act(args.action, 'voice', args.exercise_instance_id ? { exercise_instance_id: args.exercise_instance_id, set_index: args.set_index } : undefined);
+          const result = await act(args.action, 'voice', args.exercise_instance_id ? { exercise_instance_id: args.exercise_instance_id, set_index: args.set_index } : undefined, payload);
           toolVersion.current = result.version;
           return JSON.stringify({ success: true, snapshot: result });
         } catch (failure) { return JSON.stringify({ success: false, error: failure instanceof Error ? failure.message : 'Action rejected' }); }

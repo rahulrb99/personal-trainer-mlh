@@ -411,7 +411,8 @@
           "retry_deferred",
           "alternative_accepted",
           "alternative_declined",
-          "end_session"
+          "end_session",
+          "weight_updated"
         ],
         "title": "Action"
       },
@@ -545,7 +546,7 @@
           },
           "payload": {
             "additionalProperties": {
-              "type": "string"
+              "type": "integer"
             },
             "type": "object",
             "title": "Payload"
@@ -839,6 +840,13 @@
               }
             ],
             "title": "Weight Lb"
+          },
+          "set_records": {
+            "items": {
+              "$ref": "#/components/schemas/SetRecord"
+            },
+            "type": "array",
+            "title": "Set Records"
           }
         },
         "additionalProperties": false,
@@ -1093,6 +1101,71 @@
         ],
         "title": "ProfileUpdate"
       },
+      "SetRecord": {
+        "properties": {
+          "set_index": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Set Index"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "planned_reps": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Planned Reps"
+          },
+          "weight_lb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Lb"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "set_index",
+          "started_at",
+          "completed_at",
+          "duration_seconds",
+          "planned_reps",
+          "weight_lb"
+        ],
+        "title": "SetRecord"
+      },
       "Snapshot": {
         "properties": {
           "schema_version": {
@@ -1177,6 +1250,18 @@
               }
             ],
             "title": "Rest Deadline"
+          },
+          "set_started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set Started At"
           },
           "queue": {
             "items": {
@@ -1326,6 +1411,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

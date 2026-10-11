@@ -262,6 +262,13 @@
           ],
           "default": null,
           "title": "Weight Lb"
+        },
+        "set_records": {
+          "items": {
+            "$ref": "#/$defs/SetRecord"
+          },
+          "title": "Set Records",
+          "type": "array"
         }
       },
       "required": [
@@ -354,6 +361,71 @@
       },
       "title": "Preferences",
       "type": "object"
+    },
+    "SetRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "set_index": {
+          "minimum": 1,
+          "title": "Set Index",
+          "type": "integer"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Started At"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Duration Seconds"
+        },
+        "planned_reps": {
+          "exclusiveMinimum": 0,
+          "title": "Planned Reps",
+          "type": "integer"
+        },
+        "weight_lb": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Weight Lb"
+        }
+      },
+      "required": [
+        "set_index",
+        "started_at",
+        "completed_at",
+        "duration_seconds",
+        "planned_reps",
+        "weight_lb"
+      ],
+      "title": "SetRecord",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -440,6 +512,19 @@
         }
       ],
       "title": "Rest Deadline"
+    },
+    "set_started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Set Started At"
     },
     "queue": {
       "items": {

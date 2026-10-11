@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -19,6 +19,18 @@ class Action(StrEnum):
     ACCEPT = "alternative_accepted"
     DECLINE = "alternative_declined"
     END = "end_session"
+    WEIGHT = "weight_updated"
+
+
+class WeightChange(StrictModel):
+    weight_lb: int | None = Field(default=None, ge=5, le=500, multiple_of=5, strict=True)
+    weight_increase_lb: int | None = Field(default=None, gt=0, le=500, multiple_of=5, strict=True)
+
+    @model_validator(mode="after")
+    def exactly_one_weight(self):
+        if (self.weight_lb is None) == (self.weight_increase_lb is None):
+            raise ValueError("Provide either an absolute weight or an increase, not both")
+        return self
 
 
 class Preferences(StrictModel):
@@ -75,15 +87,17 @@ class Event(StrictModel):
     type: Action
     exercise_instance_id: str | None = None
     set_index: int | None = Field(default=None, ge=1, strict=True)
-    payload: dict[str, str] = Field(default_factory=dict)
+    payload: dict[str, Annotated[int, Field(strict=True)]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_target(self):
-        if self.type in {Action.CLAIM, Action.TAKEN, Action.COMPLETE, Action.SKIP, Action.ACCEPT, Action.DECLINE} and not self.exercise_instance_id:
+        if self.type in {Action.CLAIM, Action.TAKEN, Action.COMPLETE, Action.SKIP, Action.ACCEPT, Action.DECLINE, Action.WEIGHT} and not self.exercise_instance_id:
             raise ValueError("This action requires an exercise_instance_id")
-        if self.type == Action.COMPLETE and self.set_index is None:
-            raise ValueError("Set completion requires a 1-based set_index")
-        if self.payload:
+        if self.type in {Action.COMPLETE, Action.WEIGHT} and self.set_index is None:
+            raise ValueError("This action requires a 1-based set_index")
+        if self.type == Action.WEIGHT:
+            WeightChange.model_validate(self.payload)
+        elif self.payload:
             raise ValueError("No payload fields are supported in schema version 1")
         return self
 
@@ -117,11 +131,21 @@ class Exercise(StrictModel):
     review_status: Literal["professional_review_pending"]
 
 
+class SetRecord(StrictModel):
+    set_index: int = Field(ge=1)
+    started_at: datetime | None
+    completed_at: datetime
+    duration_seconds: float | None = Field(ge=0)
+    planned_reps: int = Field(gt=0)
+    weight_lb: int | None
+
+
 class ExerciseInstance(Exercise):
     instance_id: str
     original_exercise_id: str
     completed_sets: int = Field(ge=0)
     weight_lb: int | None = Field(default=None, ge=5, le=500, multiple_of=5)
+    set_records: list[SetRecord] = Field(default_factory=list)
 
 
 class Snapshot(StrictModel):
@@ -137,6 +161,7 @@ class Snapshot(StrictModel):
     current: ExerciseInstance | None
     set_index: int = Field(ge=1)
     rest_deadline: datetime | None
+    set_started_at: datetime | None = None
     queue: list[ExerciseInstance]
     deferred: list[ExerciseInstance]
     completed: list[ExerciseInstance]

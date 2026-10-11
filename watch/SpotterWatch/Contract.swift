@@ -17,6 +17,15 @@ struct Exercise: Decodable {
     let reps: Int
 }
 
+struct SetRecord: Decodable {
+    let setIndex: Int
+    let startedAt: Date?
+    let completedAt: Date
+    let durationSeconds: Double?
+    let plannedReps: Int
+    let weightLb: Int?
+}
+
 struct ExerciseInstance: Decodable {
     let instanceId: String
     let name: String
@@ -25,6 +34,8 @@ struct ExerciseInstance: Decodable {
     let sets: Int
     let reps: Int
     let completedSets: Int
+    let weightLb: Int?
+    let setRecords: [SetRecord]?
 }
 
 struct Snapshot: Decodable {
@@ -36,6 +47,7 @@ struct Snapshot: Decodable {
     let current: ExerciseInstance?
     let setIndex: Int
     let restDeadline: Date?
+    let setStartedAt: Date?
     let demoMode: Bool
     let lastDecision: String
     let pendingAlternative: Exercise?

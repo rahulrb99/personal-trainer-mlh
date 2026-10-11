@@ -6,6 +6,8 @@ Updated October 11, 2026. This replaces the simulator-first plan. Implementation
 
 Spotter is the product; Mat is the voice coach. The user sets preferences and a routine, then follows spoken guidance through exercises, sets and rests. User-reported equipment availability triggers preference-aware reordering or an approved substitution.
 
+Workout tracking scope update (October 11): equipment confirmation starts a persisted set timer; completing a set saves duration, planned reps and weight per exercise. Rest expiry starts the next timer. Mat offers conditional next-set weight changes and only explicit user confirmation updates pounds through a validated action. Saved set history never changes retroactively. Live provider tools/prompt and native acceptance require separate verification.
+
 Web entry scope update (October 11): show a themed landing page with Google sign-in first. After backend verification, greet the user by first name and open muscle-first setup (or restore their saved plan/session). The developer watch route continues to use session-token pairing. Native Google sign-in remains separate unfinished work.
 
 First deliverable: a working React Native Web experience on Mac and Windows, with live ElevenLabs voice and a simulated watch-control panel. Next deliverables: the same workout on an iPhone simulator and a small SwiftUI Apple Watch simulator app. Physical iPhone/headphone testing is optional after those pass.
@@ -209,11 +211,11 @@ Backend endpoints: health/catalog; preview a muscle-group plan; create/get sessi
 
 Event fields: UUID event_id, expected_version, source, type, exercise_instance_id, set_index, payload. Snapshot fields: monotonic version, server time, phase, preferences, current exercise/equipment/location/set, rest deadline, queue/deferred/completed entries, pending alternative, last decision.
 
-Events: equipment_claimed, equipment_taken, alternative_accepted/declined, set_completed, rest_elapsed, skip_exercise, retry_deferred, end_session. Talk is a transient client control with separate acknowledgment, not a workout completion event.
+Events: equipment_claimed, equipment_taken, alternative_accepted/declined, set_completed, rest_elapsed, skip_exercise, retry_deferred, end_session, weight_updated. Talk is a transient client control with separate acknowledgment, not a workout completion event.
 
 Backend must atomically deduplicate/validate/mutate and serialize concurrent events. Deduplicate retries before stale-version checks; replay original result. Full snapshots allow reconnect. Timer expiration survives restart and occurs once. Strict mode reorders only; substitute mode uses approved records and explicit acceptance. No weight transfer between different exercises.
 
-Tools: get_session_state(), get_exercise_guidance(exercise_id), submit_workout_action(action, exercise_instance_id, set_index). Phone/web handlers submit validated backend events. Expose only allowlisted actions. Do not let agent write arbitrary DB state.
+Tools: get_session_state(), get_exercise_guidance(exercise_id), submit_workout_action(action, exercise_instance_id, set_index, weight_lb?, weight_increase_lb?). Phone/web handlers submit validated backend events. Expose only allowlisted actions. Do not let agent write arbitrary DB state.
 
 Voice adapter interface: connect/disconnect, set listening state, get connection/listening state, supply updated workout context, request spoken cue, register tool handlers. Put implementations in platform-resolved web/native files; share API and schemas. A context update may not trigger speech: verify SDK behavior and use a supported response trigger or serialized TTS cue. Avoid overlapping speech and stale cues.
 
