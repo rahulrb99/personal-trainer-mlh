@@ -42,6 +42,8 @@ npm run web
 
 Open http://localhost:8081. Default API is http://localhost:8000. Copy `mobile/.env.example` to `mobile/.env` to change it; restart Expo when changing public environment configuration.
 
+The web landing page starts with Google sign-in, then welcomes the user by first name and opens the workout setup. Sign-in saves the user's name and last approved workout plan in the existing SQLite file. Create a Google Cloud OAuth web client ID, add `http://localhost:8081` and `http://127.0.0.1:8081` as authorized JavaScript origins, then set the same client ID in `backend/.env` as `GOOGLE_CLIENT_ID` and in `mobile/.env` as `EXPO_PUBLIC_GOOGLE_CLIENT_ID`. Restart backend and Expo after changing those values. Without them, the landing page remains visible with sign-in unavailable; web workout setup requires verified sign-in. The developer watch route keeps its session-token pairing flow. Native Google sign-in remains unimplemented; native setup retains its existing development flow.
+
 On web, click the rotating anatomical model or its labeled accessible buttons to select muscle groups; selected mapped muscles turn red. Drag rotates and the automatic rotation resumes afterward. Native and failed-WebGL paths retain the front/back schematic and labeled buttons. Model attribution and license notices are under `mobile/public/models/`.
 
 Plans above six sets for any primary or secondary muscle display a non-diagnostic fatigue caution. The user may continue only after acknowledging it, and any subsequent plan edit resets that acknowledgment.

@@ -5,17 +5,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from backend.models import (
+    AuthResult,
     CreateResult,
     CreateSession,
     Event,
     EventResult,
+    GoogleAuthRequest,
     PlanPreview,
     PlanRequest,
     PlannedExercise,
     PongFrame,
+    ProfileUpdate,
     Snapshot,
     SnapshotFrame,
     StreamAuthorization,
+    UserProfile,
 )
 from backend.app import app
 from backend.voice import VoiceRequest, VoiceAuthorization
@@ -38,6 +42,10 @@ if __name__ == "__main__":
         StreamAuthorization,
         SnapshotFrame,
         PongFrame,
+        GoogleAuthRequest,
+        UserProfile,
+        AuthResult,
+        ProfileUpdate,
     ):
         (target / f"{model.__name__}.schema.json").write_text(json.dumps(model.model_json_schema(), indent=2) + "\n")
     (target / "openapi.json").write_text(json.dumps(app.openapi(), indent=2) + "\n")

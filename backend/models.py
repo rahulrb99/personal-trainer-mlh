@@ -166,3 +166,36 @@ class SnapshotFrame(StrictModel):
 
 class PongFrame(StrictModel):
     type: Literal["pong"] = "pong"
+
+
+class GoogleAuthRequest(StrictModel):
+    id_token: str = Field(min_length=20, max_length=4096)
+
+
+class UserProfile(StrictModel):
+    user_id: str
+    email: str | None
+    name: str
+    preferences: Preferences
+    muscle_group_ids: list[str]
+    plan: list[PlannedExercise] | None
+
+
+class AuthResult(StrictModel):
+    profile: UserProfile
+    access_token: str
+
+
+class ProfileUpdate(StrictModel):
+    name: str = Field(min_length=1, max_length=60)
+    preferences: Preferences
+    muscle_group_ids: list[str] = Field(max_length=10)
+    plan: list[PlannedExercise] | None = Field(default=None, max_length=8)
+
+    @model_validator(mode="after")
+    def unique_groups(self):
+        if len(self.muscle_group_ids) != len(set(self.muscle_group_ids)):
+            raise ValueError("Muscle groups must be unique")
+        if self.plan is not None and not self.muscle_group_ids:
+            raise ValueError("A saved plan requires selected muscle groups")
+        return self

@@ -7,9 +7,10 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Iterator
+from uuid import uuid4
 
 from backend.engine import TransitionError, expire_rest, new_session, summary, transition, utc_now
-from backend.models import CreateSession, Event
+from backend.models import CreateSession, Event, Preferences, ProfileUpdate
 
 
 class StoreError(Exception):
@@ -25,6 +26,16 @@ class Store:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, state TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS events (session_id TEXT NOT NULL, event_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(session_id,event_id));
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    google_sub TEXT NOT NULL UNIQUE,
+                    email TEXT,
+                    name TEXT NOT NULL,
+                    token_hash TEXT NOT NULL,
+                    preferences TEXT NOT NULL,
+                    muscle_group_ids TEXT NOT NULL,
+                    plan TEXT
+                );
             """)
 
     @contextmanager
@@ -137,6 +148,80 @@ class Store:
 
     def summary(self, session_id: str, token: str) -> dict:
         return summary(self.get(session_id, token))
+
+    def profile_from_row(self, row: tuple) -> dict:
+        return {
+            "user_id": row[0],
+            "email": row[1] or None,
+            "name": row[2],
+            "preferences": json.loads(row[3]),
+            "muscle_group_ids": json.loads(row[4]),
+            "plan": json.loads(row[5]) if row[5] else None,
+        }
+
+    def load_profile(self, db: sqlite3.Connection, token: str) -> tuple:
+        row = db.execute(
+            "SELECT id,email,name,preferences,muscle_group_ids,plan FROM users WHERE token_hash=?",
+            (self.digest(token),),
+        ).fetchone()
+        if not row:
+            raise StoreError("Profile not found or token invalid", 401)
+        return row
+
+    def sign_in_google(self, identity: dict[str, str]) -> dict:
+        token = secrets.token_urlsafe(32)
+        defaults = Preferences().model_dump(mode="json")
+        with self.connect() as db:
+            existing = db.execute(
+                "SELECT id,email,name,preferences,muscle_group_ids,plan FROM users WHERE google_sub=?",
+                (identity["google_sub"],),
+            ).fetchone()
+            if existing:
+                db.execute("UPDATE users SET token_hash=?, email=? WHERE google_sub=?", (self.digest(token), identity["email"] or None, identity["google_sub"]))
+                profile = self.profile_from_row(existing)
+                profile["email"] = identity["email"] or None
+            else:
+                user_id = str(uuid4())
+                db.execute(
+                    "INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                    (user_id, identity["google_sub"], identity["email"] or None, identity["name"], self.digest(token), json.dumps(defaults), "[]", None),
+                )
+                profile = {
+                    "user_id": user_id,
+                    "email": identity["email"] or None,
+                    "name": identity["name"],
+                    "preferences": defaults,
+                    "muscle_group_ids": [],
+                    "plan": None,
+                }
+        return {"profile": profile, "access_token": token}
+
+    def get_profile(self, token: str) -> dict:
+        with self.connect() as db:
+            row = self.load_profile(db, token)
+        return self.profile_from_row(row[:6])
+
+    def save_profile(self, token: str, update: ProfileUpdate) -> dict:
+        with self.connect() as db:
+            row = self.load_profile(db, token)
+            db.execute(
+                "UPDATE users SET name=?, preferences=?, muscle_group_ids=?, plan=? WHERE id=?",
+                (
+                    update.name,
+                    update.preferences.model_dump_json(),
+                    json.dumps(update.muscle_group_ids),
+                    json.dumps([item.model_dump(mode="json") for item in update.plan]) if update.plan is not None else None,
+                    row[0],
+                ),
+            )
+        return {
+            "user_id": row[0],
+            "email": row[1] or None,
+            "name": update.name,
+            "preferences": update.preferences.model_dump(mode="json"),
+            "muscle_group_ids": update.muscle_group_ids,
+            "plan": [item.model_dump(mode="json") for item in update.plan] if update.plan is not None else None,
+        }
 
     def expire_due(self) -> None:
         now = utc_now()

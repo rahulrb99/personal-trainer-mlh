@@ -26,6 +26,18 @@ This supersedes the earlier Xcode 26.1.1/native-build blocker entries below. Xco
 
 **Native launch: PASS. Stage 2 native voice / Stage 4 acceptance: PARTIAL.** Live audio, conversation restart, full workout flow, watch-panel synchronization and recovery scenarios still require simulator walkthroughs. See `docs/DEVICE_CHECKS.md` for exact commands and dependency rationale. No backend or agent implementation changed in this fix.
 
+## Google-first landing page — October 11, 2026
+
+User-assigned scope update: web entry now shows a responsive landing page in the existing soft-blue Spotter theme. Workout setup is gated on a backend-verified Google profile; successful sign-in shows `Welcome, <first name>` and restores saved setup/plan. Returning profile credentials are checked before opening the flow. The watch route retains session-token pairing, and native development setup is retained because native Google sign-in is not implemented. This is a client entry gate, not a new backend authorization policy for workout endpoints.
+
+Changed files: `mobile/src/screens/landing-screen.tsx`, `mobile/src/screens/trainer-screen.tsx`, `mobile/src/auth/google-sign-in.web.tsx`, README, master plan, validation and handoff. Existing uncommitted Google profile/backend changes were preserved; no canonical contract changed in this task. Google Identity Services now renders its official popup sign-in button instead of triggering One Tap from a custom button.
+
+Windows verification: `npm run typecheck` PASS; `npm run lint -- --no-cache` PASS; `$env:NODE_OPTIONS='--max-old-space-size=4096 --max-semi-space-size=64'; npm run export:web` PASS (four routes, existing upstream Three.js deprecation warning). React component review covered effect cleanup, callback refs, disabled/loading controls, typed props and responsive layout. Sandbox preview/lint/export processes stalled; local server and final lint/export were run with approved execution outside the sandbox. Backend logic was unchanged and its tests were not rerun for this UI task.
+
+Browser: production export served locally using `.venv/Scripts/python.exe -m http.server 8081 --bind 127.0.0.1 --directory mobile/dist`, alongside the existing backend. Desktop 1280px and narrow 390px layouts PASS; hero, workout preview, instructions and official Google button render without clipped text. Evidence: `docs/evidence/google-landing-desktop.png`, `docs/evidence/google-landing-mobile.png`. Real Google account authentication and the resulting authenticated welcome/setup transition remain NOT RUN; no mock sign-in is counted as live evidence.
+
+Open launch blocker: `npm run web -- --port 8081` failed to resolve `expo-modules-core/src/ts-declarations/global` in the existing installed dependency tree and warned about a missing LiveKit package export. Production export succeeds; dependency files/manifests/lockfile were not modified. Next action: verify real Google popup sign-in and welcome/setup in the production preview, then repair the local development install separately. No commit, push or deployment performed.
+
 ## Windows install repair and Mac handoff
 
 Node 24.11.1, npm 11.6.2. Repaired mobile/package-lock.json with npm install --package-lock-only --ignore-scripts --no-audit --no-fund: PASS; package.json unchanged. npm ci accepted the repaired lock but package downloads ended in ECONNRESET. Cached retry was stopped before completion when user requested handoff to Mac. Frontend typecheck/lint/browser/audio checks remain NOT RUN on Windows; an attempted typecheck before installation finished could not find the tsc command and is not code-quality evidence. Backend local health: HTTP 200, voice_configured true. Published agent GET: HTTP 200, Mat prompt + correct omission instruction, three attached tools, authentication enabled. No secret/token/body logged. Mac owner should run install/typecheck/lint, then Stage 2 web checks and native spike; no live audio PASS is claimed here.
@@ -159,8 +171,14 @@ WebGL resilience follow-up, October 11: a browser context-allocation failure was
 
 Environment: Windows, Expo SDK 57.0.27, React Native Web 0.21.0, browser app at `http://localhost:8081`, backend at `http://127.0.0.1:8000`.
 
+## Google profile save — October 11, 2026
+
+Automated backend: `python -m pytest backend/tests -q --basetemp .tmp_pytest_auth`: **38 passed**. Coverage includes Google ID-token verification, name/plan persistence across sign-in, stale profile-token rejection, unverified-email rejection, and 503 when `GOOGLE_CLIENT_ID` is missing. `python scripts/export_contracts.py` PASS. `npm run typecheck` PASS. Live Google Cloud client ID and browser sign-in remain NOT RUN until the user adds the web client ID to ignored `.env` files.
+
 The client now validates and consumes `body_regions`, `equipment_catalog`, and `exercise_metadata`. Selecting Chest and Back displayed the normalized region names and highlighted both muscle groups. The generated four-machine plan displayed movement pattern, explicit unknown difficulty, equipment type, normalized floor/zone, unknown manufacturer/model, and the configured weight range/increment. Expanding Chest press rendered preserved setup, execution cue, mistakes, troubleshooting, stop conditions, source titles/plain URLs, and the pending-review warning. After plan approval, the active Chest press screen retained the catalog-derived machine summary and guide control.
 
 Browser walkthrough: **PASS**. Evidence: `docs/evidence/catalog-regions-wired.png`, `docs/evidence/catalog-machine-guide-wired.png`, `docs/evidence/catalog-active-workout-wired.png`.
 
 Commands: `npm run typecheck`: **PASS**. `npm run lint -- --no-cache`: **PASS**. `$env:NODE_OPTIONS='--max-old-space-size=4096 --max-semi-space-size=64'; npm run export:web`: **PASS** with the existing upstream Three.js CommonJS deprecation warning. `python -m pytest backend/tests -q --basetemp .tmp_pytest_catalog_ui`: **35 passed**. The first browser load correctly rejected a stale pre-change catalog held by the already-running backend; restarting the local backend loaded the current JSON and the walkthrough passed.
+
+Pre-push verification, October 11: pinned backend command .venv/Scripts/python.exe -m pytest backend/tests -q --basetemp .test-runs/pre-push-auth --tb=short PASS: 38 passed, one upstream AnyIO deprecation warning in 4.53s. Real Google browser authentication remains NOT RUN.

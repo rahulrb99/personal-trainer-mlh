@@ -1,5 +1,11 @@
 # Initial implementation handoff
 
+## Google-first landing page — October 11
+
+Web now opens a themed landing page with the official Google popup sign-in button. After backend verification, the trainer displays a first-name welcome and opens saved setup/plan or an existing session. Sign-out clears setup drafts and returns to the landing page. Changed client files: `mobile/src/screens/landing-screen.tsx`, `mobile/src/screens/trainer-screen.tsx`, `mobile/src/auth/google-sign-in.web.tsx`; existing profile/backend work preserved and no contract change. Native Google auth remains pending; native development setup and browser watch session pairing are retained.
+
+Windows `npm run typecheck`, `npm run lint -- --no-cache`, and production web export PASS. Desktop and 390px browser layout/button rendering PASS with screenshots in `docs/evidence/google-landing-*.png`. Actual Google account sign-in/welcome transition NOT RUN. Preview currently serves `mobile/dist` on port 8081 with Python's local HTTP server because Expo dev mode hits the installed `expo-modules-core/src/ts-declarations/global` resolution error; see the validation entry for exact commands. Next: test Google sign-in live, then repair the local development install. No publication performed.
+
 ## Interactive 3D muscle model
 
 The web muscle selector now loads the pinned `mobile/public/models/muscular.glb` anatomy asset through React Three Fiber and a locally bundled Draco decoder. The source annotation mesh is removed before body-only bounds are calculated, so the vertical rotation axis passes through the body. It rotates continuously on a fixed horizontal orbit around the chest, supports left/right drag, resolves clicks through unmapped superficial geometry to the first mapped workout muscle, and renders selected groups bright red against dimmed cool-gray anatomy. Pitch, pan, and zoom are disabled. The ten labeled buttons remain the accessible input path. Native resolution still uses the existing front/back SVG schematic; a web load/WebGL failure also falls back to that schematic.
@@ -17,6 +23,8 @@ The fixed three-machine setup has been expanded locally to a source-backed ficti
 The backend-owned Stage 3 transport work is complete locally. WebSocket authorization, snapshot and pong frames now use exported Pydantic contracts. Tests cover initial state, watch-sourced acknowledgments, duplicate replay, external broadcasts, authoritative reconnects, ping/pong and rejected authorization. Contract export and the backend suite pass with 31 tests. A Windows two-tab live-agent walkthrough now passes state synchronization, external explanations, reconnect, duplicate-control protection, voice reconnect and one full six-set routine. Stage 3 remains partial pending audible-output confirmation, a spoken question, voice-vs-control concurrency and a second full spoken run; see `docs/VALIDATION.md`.
 
 ## Current handoff to Thanmay — Stage 2 testing
+
+Google sign-in is now the web entry gate and uses the existing SQLite file. A themed landing page precedes setup; successful sign-in shows a first-name welcome and restores saved preferences/plan. Native Google sign-in is still pending and the watch route retains session-token pairing. Configure the same web client ID as `GOOGLE_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_CLIENT_ID`, then restart backend and Expo. Approving a plan while signed in saves name, muscle groups and plan for the next visit. Web setup requires sign-in; native development setup is retained.
 
 Latest status supersedes the historical notes below: user published Mat with the project prompt, correct target-omission instruction, three attached client tools and authentication. Real API authorization passes with ElevenAgents Write. Credentials remain in ignored backend/.env and must be configured locally on Mac; they are not part of this commit.
 

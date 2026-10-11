@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id_token": {
+      "maxLength": 4096,
+      "minLength": 20,
+      "title": "Id Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id_token"
+  ],
+  "title": "GoogleAuthRequest",
+  "type": "object"
+}

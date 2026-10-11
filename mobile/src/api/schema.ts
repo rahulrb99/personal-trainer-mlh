@@ -60,6 +60,12 @@ export const actionSchema = z.enum(['equipment_claimed', 'equipment_taken', 'alt
 export const createResultSchema = z.object({ snapshot: snapshotSchema, access_token: z.string() });
 export const eventResultSchema = z.object({ snapshot: snapshotSchema, replayed: z.boolean() });
 export const summarySchema = z.object({ session_id: z.string(), phase: z.string(), completed_sets: z.number(), completed_exercises: z.number(), completed: z.array(exerciseInstanceSchema), skipped: z.array(exerciseInstanceSchema), partial: z.array(exerciseInstanceSchema), substituted: z.array(exerciseInstanceSchema) });
+export const userProfileSchema = z.object({
+  user_id: z.string(), email: z.string().email().nullable(), name: z.string(),
+  preferences: preferencesSchema, muscle_group_ids: z.array(z.string()), plan: z.array(plannedExerciseSchema).nullable(),
+});
+export const authResultSchema = z.object({ profile: userProfileSchema, access_token: z.string() });
+export const healthSchema = z.object({ status: z.string(), schema_version: z.literal(1), voice_configured: z.boolean(), google_auth_configured: z.boolean() });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 export type Catalog = z.infer<typeof catalogSchema>;
 export type BodyRegion = z.infer<typeof bodyRegionSchema>;
@@ -68,4 +74,6 @@ export type ExerciseMetadata = z.infer<typeof exerciseMetadataSchema>;
 export type Preferences = z.infer<typeof preferencesSchema>;
 export type PlannedExercise = z.infer<typeof plannedExerciseSchema>;
 export type Action = z.infer<typeof actionSchema>;
+export type UserProfile = z.infer<typeof userProfileSchema>;
 export type Credentials = { session_id: string; access_token: string };
+export type ProfileAuth = { access_token: string };

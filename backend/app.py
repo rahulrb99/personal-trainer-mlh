@@ -10,17 +10,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from backend.auth import google_auth_configured, verify_google_id_token
 from backend.models import (
+    AuthResult,
     CreateResult,
     CreateSession,
     Event,
     EventResult,
+    GoogleAuthRequest,
     PlanPreview,
     PlanRequest,
     PongFrame,
+    ProfileUpdate,
     Snapshot,
     SnapshotFrame,
     StreamAuthorization,
+    UserProfile,
 )
 from backend.engine import TransitionError, preview_plan
 from backend.store import Store, StoreError
@@ -33,11 +38,11 @@ security = HTTPBearer(auto_error=False)
 
 def bearer(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> str:
     if not credentials or credentials.scheme.lower() != "bearer":
-        raise HTTPException(401, "Session token required")
+        raise HTTPException(401, "Access token required")
     return credentials.credentials
 
 
-def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
+def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseTransport | None = None, google_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     store = Store(database or os.environ.get("SPOTTER_DATABASE", str(ROOT / "backend/data/spotter.sqlite3")), CATALOG)
 
     async def tick():
@@ -57,7 +62,7 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
 
     app = FastAPI(title="Spotter workout API", version="1.0.0", lifespan=lifespan)
     app.state.store = store
-    app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("SPOTTER_CORS_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081").split(","), allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+    app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("SPOTTER_CORS_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081").split(","), allow_methods=["GET", "POST", "PUT"], allow_headers=["Authorization", "Content-Type"])
 
     @app.exception_handler(StoreError)
     async def store_error(_, exc: StoreError):
@@ -65,11 +70,24 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "schema_version": 1, "voice_configured": voice_configured()}
+        return {"status": "ok", "schema_version": 1, "voice_configured": voice_configured(), "google_auth_configured": google_auth_configured()}
 
     @app.get("/catalog")
     def catalog():
         return CATALOG
+
+    @app.post("/auth/google", response_model=AuthResult)
+    async def google_sign_in(request: GoogleAuthRequest):
+        identity = await verify_google_id_token(request, google_transport)
+        return store.sign_in_google(identity)
+
+    @app.get("/profile", response_model=UserProfile)
+    def get_profile(token: str = Depends(bearer)):
+        return store.get_profile(token)
+
+    @app.put("/profile", response_model=UserProfile)
+    def put_profile(update: ProfileUpdate, token: str = Depends(bearer)):
+        return store.save_profile(token, update)
 
     @app.post("/plans/preview", response_model=PlanPreview)
     def plan_preview(request: PlanRequest):

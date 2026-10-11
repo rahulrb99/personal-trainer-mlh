@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
 import { ActionButton } from '@/components/action-button';
 import { ExerciseCatalogDetails } from '@/components/exercise-catalog-details';
 import { MuscleMap } from '@/components/muscle-map';
+import { LandingScreen } from '@/screens/landing-screen';
 import { api } from '@/api/client';
-import { Action, Catalog, PlannedExercise, Preferences, Snapshot } from '@/api/schema';
+import { loadProfileAuth, saveProfileAuth } from '@/api/profile-storage';
+import { Action, Catalog, PlannedExercise, Preferences, ProfileAuth, Snapshot, UserProfile } from '@/api/schema';
 import { useSession } from '@/hooks/use-session';
 import { colors } from '@/theme';
 import { getVolumeCautions, recommendedSetLimit, type VolumeCaution } from '@/utils/workout-volume';
@@ -142,10 +144,96 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [endConfirm, setEndConfirm] = useState(false);
   const [showAccess, setShowAccess] = useState(false);
+  const [profileAuth, setProfileAuth] = useState<ProfileAuth | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [signingIn, setSigningIn] = useState(false);
   const { width } = useWindowDimensions();
   const wide = width >= 900;
+  function applyProfile(next: UserProfile) {
+    setProfile(next);
+    setName(next.name);
+    setMode(next.preferences.mode);
+    setCoaching(next.preferences.coaching);
+    if (next.muscle_group_ids.length) setSelectedGroups(next.muscle_group_ids);
+    if (next.plan?.length) {
+      setPlan(next.plan);
+      setVolumeAcknowledged(false);
+    }
+  }
   function loadCatalog() { setCatalogError(null); api.catalog().then(setCatalog).catch(e => setCatalogError(e.message)); }
   useEffect(() => { api.catalog().then(setCatalog).catch(e => setCatalogError(e.message)); }, []);
+  useEffect(() => {
+    let active = true;
+    async function restoreProfile() {
+      const healthCheck = api.health().then(health => {
+        if (active) setGoogleEnabled(health.google_auth_configured);
+      }).catch(() => {
+        if (active) setProfileError('Could not connect. Refresh the page to try again.');
+      });
+      try {
+        const auth = await loadProfileAuth();
+        if (auth) {
+          try {
+            const saved = await api.profile(auth);
+            if (active) { setProfileAuth(auth); applyProfile(saved); }
+          } catch (failure) {
+            await saveProfileAuth(null);
+            if (active) setProfileError(failure instanceof Error ? failure.message : 'Please sign in again.');
+          }
+        }
+      } catch {
+        if (active) setProfileError('Your saved sign-in could not be read. Please sign in again.');
+      } finally {
+        await healthCheck;
+        if (active) setCheckingProfile(false);
+      }
+    }
+    void restoreProfile();
+    return () => { active = false; };
+  }, []);
+  async function signInWithGoogle(idToken: string) {
+    if (signingIn) return;
+    setSigningIn(true);
+    setProfileError(null);
+    try {
+      const result = await api.googleSignIn(idToken);
+      const auth = { access_token: result.access_token };
+      await saveProfileAuth(auth);
+      setProfileAuth(auth);
+      applyProfile(result.profile);
+    } catch (failure) {
+      setProfileError(failure instanceof Error ? failure.message : 'Google sign-in failed.');
+    } finally {
+      setSigningIn(false);
+    }
+  }
+  async function signOutProfile() {
+    try {
+      await saveProfileAuth(null);
+      setProfileAuth(null);
+      setProfile(null);
+      setName('');
+      setSelectedGroups([]);
+      setPlan(null);
+      setVolumeAcknowledged(false);
+      setProfileError(null);
+    } catch {
+      setProfileError('Could not sign out. Please try again.');
+    }
+  }
+  async function persistProfile(nextPlan: PlannedExercise[]) {
+    if (!profileAuth) return;
+    const saved = await api.saveProfile(profileAuth, {
+      name: name.trim() || profile?.name || 'You',
+      preferences: { name: name.trim() || profile?.name || 'You', mode, coaching, excluded_exercise_ids: [] },
+      muscle_group_ids: selectedGroups,
+      plan: nextPlan,
+    });
+    setProfile(saved);
+  }
   function toggleGroup(groupId: string) {
     setPlan(null);
     setVolumeAcknowledged(false);
@@ -196,10 +284,11 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
   </View> : null;
 
   return <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" style={s.page} contentContainerStyle={s.container}>
-    <View style={s.header}><View><Text style={s.brand}>spotter<Text style={{ color: colors.blue }}>.</Text></Text><Text style={s.tagline}>A little guidance. Every set.</Text></View><View style={s.status}><View style={[s.dot, { backgroundColor: state && session.connection === 'Live' ? colors.good : colors.secondary }]} /><Text style={s.small}>{state ? session.connection : 'Web prototype'}</Text></View></View>
-    {(error || catalogError || planError) && <View style={s.error}><Text selectable style={{ color: colors.danger }}>{error || catalogError || planError}</Text>{catalogError && <ActionButton title="Reconnect" secondary onPress={loadCatalog} />}</View>}
+    <View style={s.header}><View><Text style={s.brand}>spotter<Text style={{ color: colors.blue }}>.</Text></Text><Text style={s.tagline}>A little guidance. Every set.</Text></View>{profile && !watchOnly && !state ? <ActionButton title="Sign out" secondary onPress={() => void signOutProfile()} /> : watchOnly || (profile && state) ? <View style={s.status}><View style={[s.dot, { backgroundColor: state && session.connection === 'Live' ? colors.good : colors.secondary }]} /><Text style={s.small}>{state ? session.connection : 'Watch controls'}</Text></View> : <Text style={s.small}>YOUR NEXT SET STARTS HERE</Text>}</View>
+    {(error || catalogError || planError || profileError) && <View style={s.error}><Text selectable style={{ color: colors.danger }}>{error || catalogError || planError || profileError}</Text>{catalogError && <ActionButton title="Reconnect" secondary onPress={loadCatalog} />}</View>}
 
-    {!state && watchOnly ? <View style={s.panel}><Text style={s.title}>Join your workout</Text><Paragraph>This browser panel stands in for watch controls. Enter session access from the trainer screen.</Paragraph><TextInput accessibilityLabel="Session ID" placeholder="Session ID" value={joinId} onChangeText={setJoinId} style={s.input} /><TextInput accessibilityLabel="Session token" placeholder="Session token" value={joinToken} secureTextEntry onChangeText={setJoinToken} style={s.input} />{joinError && <Text style={{ color: colors.danger }}>{joinError}</Text>}<ActionButton title="Join session" onPress={() => { setJoinError(null); session.join({ session_id: joinId.trim(), access_token: joinToken.trim() }).catch(e => setJoinError(e.message)); }} /></View> : !state ? plan && catalog ? <View style={s.panel}>
+    {!watchOnly && profile && <View accessibilityLiveRegion="polite" style={s.welcome}><Text style={s.welcomeTitle}>Welcome, {profile.name.trim().split(/\s+/)[0] || 'friend'}.</Text><Text style={s.body}>{state ? 'Let’s keep your workout moving.' : 'Let’s make today’s workout yours.'}</Text></View>}
+    {!watchOnly && Platform.OS === 'web' && !profile ? <LandingScreen checking={checkingProfile} signingIn={signingIn} googleEnabled={googleEnabled} onToken={idToken => void signInWithGoogle(idToken)} /> : !state && watchOnly ? <View style={s.panel}><Text style={s.title}>Join your workout</Text><Paragraph>This browser panel stands in for watch controls. Enter session access from the trainer screen.</Paragraph><TextInput accessibilityLabel="Session ID" placeholder="Session ID" value={joinId} onChangeText={setJoinId} style={s.input} /><TextInput accessibilityLabel="Session token" placeholder="Session token" value={joinToken} secureTextEntry onChangeText={setJoinToken} style={s.input} />{joinError && <Text style={{ color: colors.danger }}>{joinError}</Text>}<ActionButton title="Join session" onPress={() => { setJoinError(null); session.join({ session_id: joinId.trim(), access_token: joinToken.trim() }).catch(e => setJoinError(e.message)); }} /></View> : !state ? plan && catalog ? <View style={s.panel}>
       <PlanEditor
         catalog={catalog}
         selectedGroups={selectedGroups}
@@ -213,7 +302,10 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
         <ActionButton title="Back to muscle selection" secondary onPress={() => { setPlan(null); setVolumeAcknowledged(false); }} />
         <ActionButton title={demo ? 'Demo rest: 5s' : 'Normal rest: 60s'} secondary onPress={() => setDemo(!demo)} />
       </View>
-      <ActionButton title={pending ? 'Starting…' : 'Approve and start workout'} disabled={pending || plan.length === 0 || (volumeCautions.length > 0 && !volumeAcknowledged)} onPress={() => session.start({ name: name.trim() || 'You', mode, coaching, excluded_exercise_ids: [] }, demo, selectedGroups, plan)} />
+      <ActionButton title={pending ? 'Starting…' : 'Approve and start workout'} disabled={pending || plan.length === 0 || (volumeCautions.length > 0 && !volumeAcknowledged)} onPress={() => void (async () => {
+        try { await persistProfile(plan); } catch (failure) { setProfileError(failure instanceof Error ? failure.message : 'Signed-in plan could not be saved.'); }
+        session.start({ name: name.trim() || 'You', mode, coaching, excluded_exercise_ids: [] }, demo, selectedGroups, plan);
+      })()} />
       <Paragraph>Mat connects after approval. The machine order and settings become fixed when the workout starts.</Paragraph>
     </View> : <View style={[s.columns, wide && { flexDirection: 'row' }]}>
       <View style={[s.intro, wide && { flex: 1 }]}><Text style={s.hero}>Choose what{'\n'}to train today.</Text><Paragraph>Select muscle groups on the body map. Spotter recommends up to eight configured machines, then you approve every setting.</Paragraph><View style={s.mat}><Text style={s.matSymbol}>m</Text><View style={{ flex: 1 }}><Text style={s.heading}>Mat uses retrieved records.</Text><Paragraph>Guidance is source-backed demo content with professional review still pending.</Paragraph></View></View><Text style={s.small}>North gym is fictional. Confirm the actual machine placard and ask gym staff when uncertain.</Text></View>
@@ -263,6 +355,7 @@ const s = StyleSheet.create({
   stepValue: { minWidth: 28, textAlign: 'center', color: colors.ink, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   regionSummary: { gap: 4, padding: 12, borderRadius: 12, backgroundColor: colors.paleBlue },
   regionSummaryTitle: { color: colors.ink, fontSize: 12, fontWeight: '700' },
+  welcome: { gap: 6, paddingTop: 12 }, welcomeTitle: { fontSize: 30, fontWeight: '700', letterSpacing: -1, color: colors.ink },
   mat: { flexDirection: 'row', gap: 16, alignItems: 'center', padding: 20, backgroundColor: colors.paleBlue, borderRadius: 18 }, matSymbol: { fontSize: 40, color: colors.blue, fontWeight: '800', paddingHorizontal: 10 },
   metrics: { flexDirection: 'row', gap: 50, paddingVertical: 20 }, metric: { fontSize: 54, fontWeight: '600', letterSpacing: -2, color: colors.ink, fontVariant: ['tabular-nums'] },
   cue: { padding: 20, gap: 10, backgroundColor: colors.paleBlue, borderRadius: 14 }, controls: { gap: 10 }, sidebar: { gap: 20 }, watch: { padding: 25, gap: 12, backgroundColor: '#203956', borderRadius: 32, borderWidth: 5, borderColor: '#D0DCE9' }, watchTitle: { fontSize: 24, fontWeight: '600', color: '#FFFFFF' }, watchCountdown: { color: '#FFFFFF', fontSize: 48, fontVariant: ['tabular-nums'] },

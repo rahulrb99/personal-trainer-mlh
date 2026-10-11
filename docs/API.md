@@ -6,8 +6,11 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 
 | Route | Authorization | Result |
 |---|---|---|
-| GET /health | None | API status and voice configuration presence |
+| GET /health | None | API status, voice configuration, and Google sign-in configuration |
 | GET /catalog | None | Fictional gym, 18 source-backed machines, muscle groups and review status |
+| POST /auth/google | None | Verify a Google ID token and return a user profile plus profile access token |
+| GET /profile | Bearer profile token | Saved name, preferences, last muscle groups and plan |
+| PUT /profile | Bearer profile token | Replace saved name, preferences, last muscle groups and plan |
 | POST /plans/preview | None, local prototype | Deterministic PlanPreview for selected muscle groups |
 | POST /sessions | None, local prototype | CreateResult: snapshot + session access token |
 | GET /sessions/{id} | Bearer session token | Snapshot |
@@ -15,6 +18,8 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 | GET /sessions/{id}/summary | Bearer session token | Actual completed/partial/skipped/substituted work |
 | POST /voice/token | Bearer session token | Short-lived ElevenLabs WebRTC token; session_id in body |
 | WS /sessions/{id}/stream | First JSON frame carries access_token | Versioned snapshot frames, optional ping/pong |
+
+Google sign-in body: `{"id_token":"..."}`. The backend verifies the token against `GOOGLE_CLIENT_ID` with Google tokeninfo, upserts a SQLite user keyed by Google `sub`, and returns `{profile, access_token}`. The profile token is separate from the workout session token. `PUT /profile` stores the approved name, preferences, selected muscle groups and plan for the next visit. Guest workouts still work without sign-in. `/health.google_auth_configured` reports a nonblank `GOOGLE_CLIENT_ID` only.
 
 Plan preview body: `{"muscle_group_ids":["chest","back"]}`. The backend selects up to two configured machines per group in round-robin order, removes duplicates and caps the result at eight.
 

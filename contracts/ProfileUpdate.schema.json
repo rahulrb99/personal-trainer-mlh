@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "PlannedExercise": {
+      "additionalProperties": false,
+      "properties": {
+        "exercise_id": {
+          "minLength": 1,
+          "title": "Exercise Id",
+          "type": "string"
+        },
+        "sets": {
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Sets",
+          "type": "integer"
+        },
+        "reps": {
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Reps",
+          "type": "integer"
+        },
+        "weight_lb": {
+          "anyOf": [
+            {
+              "maximum": 500,
+              "minimum": 5,
+              "multipleOf": 5,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Weight Lb"
+        }
+      },
+      "required": [
+        "exercise_id",
+        "sets",
+        "reps"
+      ],
+      "title": "PlannedExercise",
+      "type": "object"
+    },
+    "Preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "You",
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "mode": {
+          "default": "strict",
+          "enum": [
+            "strict",
+            "alternatives"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "excluded_exercise_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Excluded Exercise Ids",
+          "type": "array"
+        },
+        "coaching": {
+          "default": "standard",
+          "enum": [
+            "quiet",
+            "standard",
+            "teach"
+          ],
+          "title": "Coaching",
+          "type": "string"
+        }
+      },
+      "title": "Preferences",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "preferences": {
+      "$ref": "#/$defs/Preferences"
+    },
+    "muscle_group_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10,
+      "title": "Muscle Group Ids",
+      "type": "array"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/PlannedExercise"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Plan"
+    }
+  },
+  "required": [
+    "name",
+    "preferences",
+    "muscle_group_ids"
+  ],
+  "title": "ProfileUpdate",
+  "type": "object"
+}

@@ -1,17 +1,17 @@
 import * as Crypto from 'expo-crypto';
 import { z } from 'zod';
-import { Action, Credentials, PlannedExercise, Preferences, Snapshot, catalogSchema, createResultSchema, eventResultSchema, planPreviewSchema, snapshotSchema, summarySchema } from './schema';
+import { Action, Credentials, PlannedExercise, Preferences, ProfileAuth, Snapshot, authResultSchema, catalogSchema, createResultSchema, eventResultSchema, healthSchema, planPreviewSchema, snapshotSchema, summarySchema, userProfileSchema } from './schema';
 
 export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 export class ApiError extends Error {
   constructor(message: string, public status: number, public snapshot?: Snapshot) { super(message); }
 }
-async function request<T>(path: string, schema: z.ZodType<T>, credentials?: Credentials, body?: unknown): Promise<T> {
+async function request<T>(path: string, schema: z.ZodType<T>, credentials?: { access_token: string }, body?: unknown, method?: 'GET' | 'POST' | 'PUT'): Promise<T> {
   const abort = new AbortController();
   const timeout = setTimeout(() => abort.abort(), 12000);
   try {
     const response = await fetch(`${BASE_URL}${path}`, {
-      method: body === undefined ? 'GET' : 'POST', signal: abort.signal,
+      method: method ?? (body === undefined ? 'GET' : 'POST'), signal: abort.signal,
       headers: { 'Content-Type': 'application/json', ...(credentials ? { Authorization: `Bearer ${credentials.access_token}` } : {}) },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
@@ -29,7 +29,10 @@ async function request<T>(path: string, schema: z.ZodType<T>, credentials?: Cred
 }
 export const api = {
   catalog: () => request('/catalog', catalogSchema),
-  health: () => request('/health', z.object({ status: z.string(), schema_version: z.literal(1), voice_configured: z.boolean() })),
+  health: () => request('/health', healthSchema),
+  googleSignIn: (id_token: string) => request('/auth/google', authResultSchema, undefined, { id_token }),
+  profile: (auth: ProfileAuth) => request('/profile', userProfileSchema, auth),
+  saveProfile: (auth: ProfileAuth, body: { name: string; preferences: Preferences; muscle_group_ids: string[]; plan: PlannedExercise[] | null }) => request('/profile', userProfileSchema, auth, body, 'PUT'),
   previewPlan: (muscle_group_ids: string[]) => request('/plans/preview', planPreviewSchema, undefined, { muscle_group_ids }),
   create: (preferences: Preferences, demo_mode: boolean, selected_muscle_group_ids: string[], plan: PlannedExercise[]) => request('/sessions', createResultSchema, undefined, {
     routine_id: 'full-body', preferences, demo_mode, selected_muscle_group_ids, plan,
