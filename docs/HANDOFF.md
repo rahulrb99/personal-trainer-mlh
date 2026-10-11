@@ -1,5 +1,19 @@
 # Initial implementation handoff
 
+## Create-a-plan flow — October 11
+
+Signed-in setup now opens on today’s muscle map and Build my workout. Create a plan sits at the top and opens a left-hand vertical list of Monday–Sunday. Choosing a day shows its time, then that day’s muscle map underneath, then build and Save. The same panel is used for every day, including Tuesday. Each save writes the whole week through the existing PUT /profile/schedule. Today’s workout remains a separate one-off plan. No contract change.
+
+Changed: `mobile/src/screens/trainer-screen.tsx`, `mobile/src/components/weekly-schedule.tsx`, README, MASTER_PLAN, API notes. Welcome/continue/rest-day entry is no longer the default route.
+
+## Weekly setup and returning-user flow — October 11
+
+First-time signed-in profiles now configure a recurring week using the existing muscle map and plan editor for each day/time. Save days, then Finish weekly setup. Returning profiles select today from the device-local date and show Welcome back plus today's focus; Continue opens the saved equipment plan for daily edits. Rest days show the closest next workout and Train today. Choose different muscles makes a one-off plan; Edit weekly schedule changes the recurring templates. Drafts survive day switches; unsaved days block Finish. No reminders or automatic workout start.
+
+Changed: backend WeeklyWorkout/ScheduleUpdate/UserProfile models, schedule store/table and PUT /profile/schedule; generated schemas/OpenAPI/examples; shared API/schema, trainer flow, weekly-schedule.tsx and workout-schedule.ts; stable session reset for finished-session restoration; backend schedule tests and scripts/check_schedule.cjs; runbooks. Existing profiles migrate to schedule:[] without losing last plan/session data. Schedule writes validate every machine with the existing engine; ordinary profile saves and daily edits preserve the weekly template. Watch/voice action contracts unchanged.
+
+Checks: **65 backend tests pass** (one upstream warning); schedule date/week-wrap helper PASS; mobile typecheck/lint/export PASS. Browser synthetic-profile walkthrough passes two-day setup, return/today greeting, saved equipment continuation, daily editing, template preservation, unsaved day recovery, rest-day next workout and custom muscles. The production root route also passed profile restoration, finished-session cleanup and narrow-screen layout. OAuth was not verified by the fixture. Temporary test route removed and production build has four routes. Mac next: pull after human-authorized publication, configure Google locally, test genuine first/return login and native rendering. No publish/commit/push for this task. Exact commands/evidence: docs/VALIDATION.md.
+
 ## Set timer and confirmed weights — October 11
 
 Explicit scope assignment implemented persisted set_started_at and per-exercise set_records (timestamps, duration, planned reps, weight). Equipment confirmation starts set 1; the rest deadline starts subsequent sets. Completion stops/saves; skip/end does not fabricate a completed record. Added weight_updated with exactly one weight_lb/weight_increase_lb payload and current instance/set validation. Completed histories retain their original weights; unknown-baseline increases are rejected. Legacy records/timing are not reconstructed.

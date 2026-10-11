@@ -74,9 +74,14 @@ export const actionSchema = z.enum(['equipment_claimed', 'equipment_taken', 'alt
 export const createResultSchema = z.object({ snapshot: snapshotSchema, access_token: z.string() });
 export const eventResultSchema = z.object({ snapshot: snapshotSchema, replayed: z.boolean() });
 export const summarySchema = z.object({ session_id: z.string(), phase: z.string(), completed_sets: z.number(), completed_exercises: z.number(), completed: z.array(exerciseInstanceSchema), skipped: z.array(exerciseInstanceSchema), partial: z.array(exerciseInstanceSchema), substituted: z.array(exerciseInstanceSchema) });
+export const weeklyWorkoutSchema = z.object({
+  weekday: z.number().int().min(0).max(6), time: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
+  muscle_group_ids: z.array(z.string()).min(1).max(10), plan: z.array(plannedExerciseSchema).min(1).max(8),
+});
+export type WeeklyWorkout = z.infer<typeof weeklyWorkoutSchema>;
 export const userProfileSchema = z.object({
   user_id: z.string(), email: z.string().email().nullable(), name: z.string(),
-  preferences: preferencesSchema, muscle_group_ids: z.array(z.string()), plan: z.array(plannedExerciseSchema).nullable(),
+  preferences: preferencesSchema, muscle_group_ids: z.array(z.string()), plan: z.array(plannedExerciseSchema).nullable(), schedule: z.array(weeklyWorkoutSchema).max(7).default([]),
 });
 export const authResultSchema = z.object({ profile: userProfileSchema, access_token: z.string() });
 export const healthSchema = z.object({ status: z.string(), schema_version: z.literal(1), voice_configured: z.boolean(), google_auth_configured: z.boolean() });

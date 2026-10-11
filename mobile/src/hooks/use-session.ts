@@ -168,7 +168,7 @@ export function useSession() {
     finally { setPending(false); }
   }
 
-  async function reset() { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); setError(null); setConnection('Offline'); }
+  const reset = useCallback(async () => { await saveSession(null); setCredentials(null); current.current = null; setSnapshot(null); setError(null); setConnection('Offline'); }, []);
   async function join(c: Credentials) { const state = await api.snapshot(c); await saveSession(c); accept(state); setCredentials(c); }
   return { credentials, snapshot, error, pending, connection, restSeconds, setSeconds, start, reset, join, act };
 }

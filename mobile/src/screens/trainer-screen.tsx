@@ -3,13 +3,15 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, T
 import Slider from '@react-native-community/slider';
 import { Link } from 'expo-router';
 import { ActionButton } from '@/components/action-button';
+import { DayTimeField, WeekdayRail } from '@/components/weekly-schedule';
+import { weekdays } from '@/utils/workout-schedule';
 import { SetHistory, SetTracking } from '@/components/set-tracking';
 import { ExerciseCatalogDetails } from '@/components/exercise-catalog-details';
 import { MuscleMap } from '@/components/muscle-map';
 import { LandingScreen } from '@/screens/landing-screen';
 import { api } from '@/api/client';
 import { loadProfileAuth, saveProfileAuth } from '@/api/profile-storage';
-import { Action, Catalog, PlannedExercise, Preferences, ProfileAuth, Snapshot, UserProfile } from '@/api/schema';
+import { Action, Catalog, PlannedExercise, Preferences, ProfileAuth, Snapshot, UserProfile, WeeklyWorkout } from '@/api/schema';
 import { useSession } from '@/hooks/use-session';
 import { colors } from '@/theme';
 import { getVolumeCautions, recommendedSetLimit, type VolumeCaution } from '@/utils/workout-volume';
@@ -17,6 +19,8 @@ import { TrainerAvatar, TrainerPersonaEditor, motivationGreeting } from '@/compo
 import { defaultTrainer, type TrainerPersona } from '@/api/schema';
 import { reminderHandled, markReminderHandled } from '@/voice/reminder-state';
 import { VoicePanel } from '@/voice/voice-panel';
+
+type DayDraft = { time: string; groups: string[]; plan: PlannedExercise[] | null; dirty: boolean };
 
 const phaseLabels: Record<Snapshot['phase'], string> = {
   awaiting_equipment: 'Find your equipment', awaiting_alternative_confirmation: 'Try an alternative?',
@@ -35,7 +39,8 @@ function Stepper({ label, value, minimum, maximum, onChange }: { label: string; 
   </View>;
 }
 
-function PlanEditor({ catalog, selectedGroups, plan, onChange, volumeCautions, volumeAcknowledged, onVolumeAcknowledgementChange }: {
+function PlanEditor({ title = "Approve today’s plan", catalog, selectedGroups, plan, onChange, volumeCautions, volumeAcknowledged, onVolumeAcknowledgementChange }: {
+  title?: string;
   catalog: Catalog;
   selectedGroups: string[];
   plan: PlannedExercise[];
@@ -55,7 +60,7 @@ function PlanEditor({ catalog, selectedGroups, plan, onChange, volumeCautions, v
 
   return <View style={{ gap: 18 }}>
     <View>
-      <Text style={s.title}>Approve today’s plan</Text>
+      <Text style={s.title}>{title}</Text>
       <Paragraph>Review each machine and location. Settings are planning values, not a prescribed safe load.</Paragraph>
     </View>
     {!!volumeCautions.length && <View accessibilityRole="alert" style={s.caution}>
@@ -159,19 +164,37 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
+  const [setupRoute, setSetupRoute] = useState<'schedule' | 'workout'>('workout');
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklyWorkout[]>([]);
+  const [weekday, setWeekday] = useState<number | null>(null);
+  const [trainingTime, setTrainingTime] = useState('18:00');
+  const [dayDirty, setDayDirty] = useState(false);
+  const [dayDrafts, setDayDrafts] = useState<Record<number, DayDraft>>({});
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [returningProfile, setReturningProfile] = useState(false);
   const { width } = useWindowDimensions();
   const wide = width >= 900;
+  const resetSession = session.reset;
+  useEffect(() => {
+    if (profile && setupRoute !== 'workout' && (state?.phase === 'ended' || state?.phase === 'completed')) {
+      void resetSession().catch(() => setProfileError('Your previous workout could not be cleared. Please refresh.'));
+    }
+  }, [profile, setupRoute, state?.phase, resetSession]);
   function applyProfile(next: UserProfile) {
     setProfile(next);
     setTrainer(next.preferences.trainer);
     setName(next.name);
     setMode(next.preferences.mode);
     setCoaching(next.preferences.coaching);
-    if (next.muscle_group_ids.length) setSelectedGroups(next.muscle_group_ids);
-    if (next.plan?.length) {
-      setPlan(next.plan);
-      setVolumeAcknowledged(false);
-    }
+    setWeeklySchedule(next.schedule);
+    setReturningProfile(next.schedule.length > 0);
+    setSetupRoute('workout');
+    setWeekday(null);
+    setSelectedGroups(next.muscle_group_ids);
+    setPlan(null);
+    setVolumeAcknowledged(false);
+    setDayDrafts({});
+    setDayDirty(false);
   }
   function loadCatalog() { setCatalogError(null); api.catalog().then(setCatalog).catch(e => setCatalogError(e.message)); }
   useEffect(() => { api.catalog().then(setCatalog).catch(e => setCatalogError(e.message)); }, []);
@@ -232,6 +255,7 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
       setPlan(null);
       setVolumeAcknowledged(false);
       setProfileError(null);
+      setWeeklySchedule([]); setDayDrafts({}); setDayDirty(false); setSetupRoute('workout');
     } catch {
       setProfileError('Could not sign out. Please try again.');
     }
@@ -261,13 +285,83 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
     } catch (failure) { setTrainerError(failure instanceof Error ? failure.message : 'Could not save your trainer. Try again.'); }
     finally { setSavingTrainer(false); }
   }
+  const editingSchedule = !watchOnly && Boolean(profile) && setupRoute === 'schedule';
+  const validTrainingTime = /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(trainingTime);
+  function chooseScheduleDay(day: number) {
+    if (day === weekday) return;
+    setDayDrafts(drafts => weekday === null ? drafts : { ...drafts, [weekday]: { time: trainingTime, groups: selectedGroups, plan, dirty: dayDirty } });
+    const draft = dayDrafts[day];
+    const saved = weeklySchedule.find(workout => workout.weekday === day);
+    setWeekday(day);
+    setTrainingTime(draft?.time ?? saved?.time ?? '18:00');
+    setSelectedGroups(draft?.groups ?? saved?.muscle_group_ids ?? []);
+    setPlan(draft ? draft.plan : saved?.plan ?? null);
+    setDayDirty(draft?.dirty ?? false);
+    setVolumeAcknowledged(false); setPlanError(null);
+  }
+  function openPlanBuilder() {
+    setSetupRoute('schedule');
+    setWeeklySchedule(profile?.schedule ?? []);
+    setWeekday(null);
+    setTrainingTime('18:00');
+    setSelectedGroups([]);
+    setPlan(null);
+    setDayDrafts({});
+    setDayDirty(false);
+    setVolumeAcknowledged(false);
+    setPlanError(null);
+  }
+  function leavePlanBuilder() {
+    setSetupRoute('workout');
+    setWeekday(null);
+    setWeeklySchedule(profile?.schedule ?? []);
+    setDayDrafts({});
+    setDayDirty(false);
+    setSelectedGroups(profile?.muscle_group_ids ?? []);
+    setPlan(null);
+    setVolumeAcknowledged(false);
+    setPlanError(null);
+  }
+  async function saveScheduleDay() {
+    if (weekday === null || !profileAuth || !plan?.length || !selectedGroups.length || !validTrainingTime) {
+      setPlanError('Choose muscles, review a plan, and enter a time such as 18:00.'); return;
+    }
+    const workout = { weekday, time: trainingTime, muscle_group_ids: [...selectedGroups], plan: plan.map(item => ({ ...item })) };
+    const nextSchedule = [...weeklySchedule.filter(day => day.weekday !== weekday), workout].sort((a, b) => a.weekday - b.weekday);
+    setSavingSchedule(true); setPlanError(null);
+    try {
+      const saved = await api.saveSchedule(profileAuth, nextSchedule);
+      setProfile(saved); setWeeklySchedule(saved.schedule); setDayDirty(false);
+      setDayDrafts(drafts => { const next = { ...drafts }; delete next[weekday]; return next; });
+    } catch (failure) { setPlanError(failure instanceof Error ? failure.message : 'This day could not be saved. Try again.'); }
+    finally { setSavingSchedule(false); }
+  }
+  async function removeScheduleDay() {
+    if (weekday === null || !profileAuth) return;
+    const wasSaved = weeklySchedule.some(day => day.weekday === weekday);
+    const remaining = weeklySchedule.filter(day => day.weekday !== weekday);
+    if (wasSaved && !remaining.length) {
+      setPlanError('Keep at least one training day, or replace this day before removing it.'); return;
+    }
+    setSelectedGroups([]); setPlan(null); setDayDirty(false); setVolumeAcknowledged(false);
+    setDayDrafts(drafts => { const next = { ...drafts }; delete next[weekday]; return next; });
+    if (!wasSaved) { setPlanError(null); return; }
+    setSavingSchedule(true);
+    try {
+      const saved = await api.saveSchedule(profileAuth, remaining);
+      setProfile(saved); setWeeklySchedule(saved.schedule); setPlanError(null);
+    } catch (failure) { setPlanError(failure instanceof Error ? failure.message : 'This day could not be removed. Try again.'); }
+    finally { setSavingSchedule(false); }
+  }
   function toggleGroup(groupId: string) {
+    if (editingSchedule) setDayDirty(true);
     setPlan(null);
     setVolumeAcknowledged(false);
     setPlanError(null);
     setSelectedGroups(groups => groups.includes(groupId) ? groups.filter(id => id !== groupId) : [...groups, groupId]);
   }
   function updatePlan(nextPlan: PlannedExercise[]) {
+    if (editingSchedule) setDayDirty(true);
     setPlan(nextPlan);
     setVolumeAcknowledged(false);
   }
@@ -299,6 +393,20 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
       .filter((name): name is string => Boolean(name))
   )] : [];
 
+  const scheduleDayName = weekday === null ? '' : weekdays[weekday];
+  function weekFrame(content: React.ReactNode) {
+    if (!editingSchedule) return content;
+    return <View style={s.planLayout}>
+      <WeekdayRail schedule={weeklySchedule} weekday={weekday} pending={savingSchedule || planning} onDay={chooseScheduleDay} />
+      <View style={s.planMain}>
+        {weekday === null ? <View style={s.panel}><Text style={s.title}>Pick a training day.</Text><Paragraph>The days stay on the left. Choose one, enter its time, then select muscles and save. Tuesday and every other day work the same way.</Paragraph></View> : <>
+          <DayTimeField day={scheduleDayName} time={trainingTime} pending={savingSchedule || planning} onTime={time => { setTrainingTime(time); setDayDirty(true); }} />
+          {validTrainingTime ? content : <View style={s.panel}><Paragraph>Enter a time such as 18:00. Muscle selection appears just below it.</Paragraph></View>}
+        </>}
+      </View>
+    </View>;
+  }
+
   const controls = state && !ended ? <View style={s.controls}>
     {state.phase === 'awaiting_equipment' && <><ActionButton title="Got it" onPress={() => act('equipment_claimed')} disabled={pending} /><ActionButton title="Taken" secondary onPress={() => act('equipment_taken')} disabled={pending} /></>}
     {state.phase === 'exercising' && <ActionButton title="Set done" onPress={() => act('set_completed')} disabled={pending} />}
@@ -312,14 +420,31 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
 
   return <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" style={s.page} contentContainerStyle={s.container}>
     <View style={s.header}><View><Text style={s.brand}>spotter<Text style={{ color: colors.blue }}>.</Text></Text><Text style={s.tagline}>A little guidance. Every set.</Text></View>{profile && !watchOnly && !state ? <ActionButton title="Sign out" secondary onPress={() => void signOutProfile()} /> : watchOnly || (profile && state) ? <View style={s.status}><View style={[s.dot, { backgroundColor: state && session.connection === 'Live' ? colors.good : colors.secondary }]} /><Text style={s.small}>{state ? session.connection : 'Watch controls'}</Text></View> : <Text style={s.small}>YOUR NEXT SET STARTS HERE</Text>}</View>
+    {!watchOnly && profile && !state && <View style={s.topAction}>{setupRoute === 'schedule' ? <ActionButton title="Today’s workout" secondary disabled={savingSchedule} onPress={leavePlanBuilder} /> : <ActionButton title="Create a plan" onPress={openPlanBuilder} />}</View>}
     {(error || catalogError || planError || profileError) && <View style={s.error}><Text selectable style={{ color: colors.danger }}>{error || catalogError || planError || profileError}</Text>{catalogError && <ActionButton title="Reconnect" secondary onPress={loadCatalog} />}</View>}
 
-    {!watchOnly && profile && <View accessibilityLiveRegion="polite" style={s.welcome}><Text style={s.welcomeTitle}>Welcome, {profile.name.trim().split(/\s+/)[0] || 'friend'}.</Text><Text style={s.body}>{state ? 'Let’s keep your workout moving.' : 'Let’s make today’s workout yours.'}</Text></View>}
+    {!watchOnly && profile && <View accessibilityLiveRegion="polite" style={s.welcome}><Text style={s.welcomeTitle}>{returningProfile ? 'Welcome back' : 'Welcome'}, {profile.name.trim().split(/\s+/)[0] || 'friend'}.</Text><Text style={s.body}>{state ? 'Let’s keep your workout moving.' : editingSchedule ? 'Set a time and muscles for each day you train.' : 'Let’s make today’s workout yours.'}</Text></View>}
     {!watchOnly && (profile || Platform.OS !== 'web') && !state && (editingTrainer ? <TrainerPersonaEditor value={trainer} onSave={next => void saveTrainer(next)} onCancel={() => setEditingTrainer(false)} saving={savingTrainer} error={trainerError} signedIn={!!profileAuth} /> : <View style={s.mat}><TrainerAvatar trainer={trainer} size={90} /><View style={{ flex: 1 }}><Text style={s.heading}>{trainer.name}, your trainer</Text><Paragraph>{trainer.motivation ? `Your why: “${trainer.motivation}”` : 'Give your trainer a personality and a reason to remind you why you show up.'}</Paragraph></View><ActionButton title="Customize trainer" secondary onPress={() => { setTrainerError(null); setEditingTrainer(true); }} /></View>)}
     {!watchOnly && state && (editingTrainer ? <View style={{ gap: 12 }}><Paragraph>Changes apply to your next workout. This session keeps the trainer you started with.</Paragraph><TrainerPersonaEditor value={trainer} onSave={next => void saveTrainer(next)} onCancel={() => setEditingTrainer(false)} saving={savingTrainer} error={trainerError} signedIn={!!profileAuth} /></View> : <ActionButton title="Customize trainer for next workout" secondary onPress={() => { setTrainerError(null); setEditingTrainer(true); }} />)}
     {!watchOnly && state && !ended && state.preferences.trainer.remind && !!state.preferences.trainer.motivation && dismissedReminder !== state.session_id && !reminderHandled(state.session_id) && <View style={s.mat}><TrainerAvatar trainer={state.preferences.trainer} size={90} /><View style={{ flex: 1 }}><Text style={s.heading}>Good to see you.</Text><Paragraph>{motivationGreeting(state.preferences.name)}</Paragraph><ActionButton title="Skip reminder" secondary onPress={() => { markReminderHandled(state.session_id); setDismissedReminder(state.session_id); }} /></View></View>}
-    {!watchOnly && Platform.OS === 'web' && !profile ? <LandingScreen checking={checkingProfile} signingIn={signingIn} googleEnabled={googleEnabled} onToken={idToken => void signInWithGoogle(idToken)} /> : !state && watchOnly ? <View style={s.panel}><Text style={s.title}>Join your workout</Text><Paragraph>This browser panel stands in for watch controls. Enter session access from the trainer screen.</Paragraph><TextInput accessibilityLabel="Session ID" placeholder="Session ID" value={joinId} onChangeText={setJoinId} style={s.input} /><TextInput accessibilityLabel="Session token" placeholder="Session token" value={joinToken} secureTextEntry onChangeText={setJoinToken} style={s.input} />{joinError && <Text style={{ color: colors.danger }}>{joinError}</Text>}<ActionButton title="Join session" onPress={() => { setJoinError(null); session.join({ session_id: joinId.trim(), access_token: joinToken.trim() }).catch(e => setJoinError(e.message)); }} /></View> : !state ? plan && catalog ? <View style={s.panel}>
+    {!watchOnly && Platform.OS === 'web' && !profile ? <LandingScreen checking={checkingProfile} signingIn={signingIn} googleEnabled={googleEnabled} onToken={idToken => void signInWithGoogle(idToken)} /> : !state && watchOnly ? <View style={s.panel}><Text style={s.title}>Join your workout</Text><Paragraph>This browser panel stands in for watch controls. Enter session access from the trainer screen.</Paragraph><TextInput accessibilityLabel="Session ID" placeholder="Session ID" value={joinId} onChangeText={setJoinId} style={s.input} /><TextInput accessibilityLabel="Session token" placeholder="Session token" value={joinToken} secureTextEntry onChangeText={setJoinToken} style={s.input} />{joinError && <Text style={{ color: colors.danger }}>{joinError}</Text>}<ActionButton title="Join session" onPress={() => { setJoinError(null); session.join({ session_id: joinId.trim(), access_token: joinToken.trim() }).catch(e => setJoinError(e.message)); }} /></View> : !state && editingSchedule ? weekFrame(<View style={{ gap: 18 }}>
+      <View style={s.panel}>
+        <Text style={s.title}>{scheduleDayName}’s muscles</Text>
+        {!catalog ? <ActivityIndicator color={colors.blue} /> : <MuscleMap groups={catalog.muscle_groups} selected={selectedGroups} onToggle={toggleGroup} />}
+        {!!bodyRegionNames.length && <View style={s.regionSummary}><Text style={s.regionSummaryTitle}>Highlighted body-map regions</Text><Text style={s.small}>{bodyRegionNames.join(' · ')}</Text></View>}
+        {!plan && <ActionButton title={planning ? 'Building plan…' : 'Build this day'} disabled={!catalog || !selectedGroups.length || planning || savingSchedule} onPress={() => void previewPlan()} />}
+      </View>
+      {plan && catalog && <View style={s.panel}>
+        <PlanEditor title={`Review ${scheduleDayName}’s plan`} catalog={catalog} selectedGroups={selectedGroups} plan={plan} onChange={updatePlan} volumeCautions={volumeCautions} volumeAcknowledged={volumeAcknowledged} onVolumeAcknowledgementChange={setVolumeAcknowledged} />
+        <View style={s.optionRow}>
+          <ActionButton title={savingSchedule ? 'Saving…' : `Save ${scheduleDayName}`} disabled={savingSchedule || !plan.length || !validTrainingTime || (volumeCautions.length > 0 && !volumeAcknowledged)} onPress={() => void saveScheduleDay()} />
+          {weeklySchedule.some(item => item.weekday === weekday) && <ActionButton title={`Remove ${scheduleDayName}`} secondary disabled={savingSchedule} onPress={() => void removeScheduleDay()} />}
+        </View>
+        <Paragraph>Save this day, then choose another day on the left.</Paragraph>
+      </View>}
+    </View>) : !state && plan && catalog ? <View style={s.panel}>
       <PlanEditor
+        title="Approve today’s plan"
         catalog={catalog}
         selectedGroups={selectedGroups}
         plan={plan}
@@ -339,7 +464,7 @@ export function TrainerScreen({ watchOnly = false }: { watchOnly?: boolean }) {
         } catch (failure) { setProfileError(failure instanceof Error ? failure.message : 'Could not save and start your workout. Try again.'); }
       })()} />
       <Paragraph>{trainer.name}’s voice is available after approval. The machine order becomes fixed when the workout starts. You can confirm weight changes between sets.</Paragraph>
-    </View> : <View style={[s.columns, wide && { flexDirection: 'row' }]}>
+    </View> : !state ? <View style={[s.columns, wide && { flexDirection: 'row' }]}>
       <View style={[s.intro, wide && { flex: 1 }]}><Text style={s.hero}>Choose what{'\n'}to train today.</Text><Paragraph>Select muscle groups on the body map. Spotter recommends up to eight configured machines, then you approve every setting.</Paragraph><View style={s.mat}><Text style={s.matSymbol}>m</Text><View style={{ flex: 1 }}><Text style={s.heading}>{trainer.name} is in your corner.</Text><Paragraph>Guidance is source-backed demo content with professional review still pending.</Paragraph></View></View><Text style={s.small}>North gym is fictional. Confirm the actual machine placard and ask gym staff when uncertain.</Text></View>
       <View style={[s.panel, wide && { width: 560 }]}>
         <Text style={s.title}>Today’s muscles</Text>
@@ -367,7 +492,7 @@ const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.background }, container: { padding: 28, gap: 28, width: '100%', maxWidth: 1180, alignSelf: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 }, brand: { fontSize: 32, fontWeight: '800', letterSpacing: -1.5, color: colors.ink }, tagline: { fontSize: 13, color: colors.secondary },
   status: { flexDirection: 'row', alignItems: 'center', gap: 8 }, dot: { width: 8, height: 8, borderRadius: 4 }, small: { fontSize: 12, lineHeight: 18, color: colors.secondary },
-  columns: { gap: 24 }, intro: { paddingVertical: 30, gap: 26 }, hero: { fontSize: 54, lineHeight: 58, letterSpacing: -2.5, fontWeight: '700', color: colors.ink }, body: { fontSize: 15, lineHeight: 24, color: colors.secondary },
+  columns: { gap: 24 }, planLayout: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 }, planMain: { flex: 1, gap: 18, minWidth: 0 }, topAction: { alignItems: 'flex-start' }, intro: { paddingVertical: 30, gap: 26 }, hero: { fontSize: 54, lineHeight: 58, letterSpacing: -2.5, fontWeight: '700', color: colors.ink }, body: { fontSize: 15, lineHeight: 24, color: colors.secondary },
   panel: { padding: 26, backgroundColor: colors.paper, borderRadius: 20, gap: 18 }, title: { fontSize: 34, fontWeight: '700', letterSpacing: -1.2, color: colors.ink }, heading: { fontSize: 16, fontWeight: '600', color: colors.ink },
   label: { fontSize: 14, fontWeight: '600', color: colors.secondary }, input: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, color: colors.ink, backgroundColor: '#F8FAFD' },
   optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }, routine: { flexDirection: 'row', gap: 14, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }, number: { fontSize: 18, color: colors.secondary, fontVariant: ['tabular-nums'] },

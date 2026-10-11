@@ -208,6 +208,30 @@ class GoogleAuthRequest(StrictModel):
     id_token: str = Field(min_length=20, max_length=4096)
 
 
+class WeeklyWorkout(StrictModel):
+    weekday: int = Field(ge=0, le=6, strict=True, description="0 Monday through 6 Sunday, in the user's local calendar")
+    time: str = Field(pattern=r"^([01][0-9]|2[0-3]):[0-5][0-9]$", description="Local wall time HH:MM; informational, no reminders")
+    muscle_group_ids: list[str] = Field(min_length=1, max_length=10)
+    plan: list[PlannedExercise] = Field(min_length=1, max_length=8)
+
+    @model_validator(mode="after")
+    def unique_muscles(self):
+        if len(self.muscle_group_ids) != len(set(self.muscle_group_ids)):
+            raise ValueError("Muscle groups must be unique")
+        return self
+
+
+class ScheduleUpdate(StrictModel):
+    schedule: list[WeeklyWorkout] = Field(min_length=1, max_length=7)
+
+    @model_validator(mode="after")
+    def unique_days(self):
+        days = [workout.weekday for workout in self.schedule]
+        if len(days) != len(set(days)):
+            raise ValueError("Each weekday can have one workout")
+        return self
+
+
 class UserProfile(StrictModel):
     user_id: str
     email: str | None
@@ -215,6 +239,7 @@ class UserProfile(StrictModel):
     preferences: Preferences
     muscle_group_ids: list[str]
     plan: list[PlannedExercise] | None
+    schedule: list[WeeklyWorkout] = Field(default_factory=list)
 
 
 class AuthResult(StrictModel):

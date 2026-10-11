@@ -94,3 +94,10 @@ The standalone SwiftUI app is in [`watch/`](watch/README.md). Build/run instruct
 ### Set timer and weight changes
 
 Confirming equipment starts a visible set timer. Set done stores each set's elapsed time and weight in the session and summary. Rests stop the timer; the next timer starts at rest expiry. You can explicitly change the current/next set's total pounds or confirm an increase without rewriting completed sets. Mat's updated local prompt maps found-machine and weight-change phrases; apply agent/prompt.md and the new weight_updated enum plus optional weight_lb/weight_increase_lb arguments from agent/tools.json to the published ElevenLabs agent before live voice testing. Browser buttons and backend timing/history are verified; new live voice/native checks remain pending.
+
+
+### Your weekly workout plan
+
+After sign-in, the default screen is today’s muscle map: select muscles and build the workout. **Create a plan**, at the top of that screen, opens the week. Days are listed vertically on the left. Choose a day, enter its local time, then select that day’s muscles underneath and save. Each day, including Tuesday, uses the same time, muscle, and save steps. Saved days stay marked on the left. Unselected days are rest days. Times organize the plan only; no reminders are sent. Today’s one-off workout does not rewrite the saved week.
+
+Verification command for local weekday/week-wrap behavior: `node scripts/check_schedule.cjs` from the repository root after installing mobile dependencies.

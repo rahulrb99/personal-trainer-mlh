@@ -1,0 +1,26 @@
+// Run with node scripts/check_schedule.cjs; uses the existing mobile TypeScript dependency.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const ts = require('../mobile/node_modules/typescript');
+const source = fs.readFileSync(path.join(__dirname, '../mobile/src/utils/workout-schedule.ts'), 'utf8');
+const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const exportsObject = {};
+vm.runInNewContext(compiled, { exports: exportsObject });
+const { localWeekday, scheduledWorkout, workoutFocus, displayWorkoutTime } = exportsObject;
+const monday = { weekday: 0, time: '07:30', muscle_group_ids: ['quadriceps'], plan: [] };
+const friday = { ...monday, weekday: 4 };
+const sunday = new Date(2026, 9, 11, 23, 59);
+assert.equal(localWeekday(sunday), 6);
+assert.equal(scheduledWorkout([friday, monday], sunday).workout.weekday, 0);
+assert.equal(scheduledWorkout([monday], sunday).daysAway, 1);
+assert.equal(scheduledWorkout([monday], new Date(2026, 9, 12, 23, 59)).daysAway, 0);
+assert.equal(scheduledWorkout([friday], new Date(2026, 9, 12)).daysAway, 4);
+assert.equal(scheduledWorkout([], sunday), null);
+assert.equal(workoutFocus(['quadriceps', 'hamstrings'], null), 'leg');
+assert.equal(workoutFocus(['chest', 'back'], null), 'chest + back');
+assert.equal(displayWorkoutTime('00:00'), '12:00 AM');
+assert.equal(displayWorkoutTime('12:30'), '12:30 PM');
+assert.equal(displayWorkoutTime('18:05'), '6:05 PM');
+console.log('PASS: local weekday, today selection, next workout, week wrap, focus and time labels.');

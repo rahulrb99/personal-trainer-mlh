@@ -10,6 +10,7 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 | GET /catalog | None | Fictional gym, 18 source-backed machines, muscle groups and review status |
 | POST /auth/google | None | Verify a Google ID token and return a user profile plus profile access token |
 | GET /profile | Bearer profile token | Saved name, preferences, last muscle groups and plan |
+| PUT /profile/schedule | Bearer profile token | Replace the recurring weekly workout templates |
 | PUT /profile | Bearer profile token | Replace saved name, preferences, last muscle groups and plan |
 | POST /plans/preview | None, local prototype | Deterministic PlanPreview for selected muscle groups |
 | POST /sessions | None, local prototype | CreateResult: snapshot + session access token |
@@ -79,3 +80,11 @@ Provider configuration requirement: update the published Mat system prompt from 
 ### Trainer language
 
 `preferences.trainer.language` accepts `en` (English) and `es` (Spanish), defaulting to `en` when absent in old profiles, requests or persisted sessions. Profile updates and new workouts preserve the selection; unsupported codes return HTTP 422. This additive schema-version-1 field does not change workout events or units. The watch decoder ignores unused trainer preferences; no watch speech or menu translation is introduced. Voice startup uses the saved workout selection. See `agent/README.md` for required provider settings.
+
+## Weekly workout templates — October 11
+
+UserProfile adds `schedule` (defaults to an empty array for legacy profiles). `PUT /profile/schedule` accepts `{"schedule":[{"weekday":0,"time":"18:30","muscle_group_ids":["chest"],"plan":[{"exercise_id":"chest-press","sets":2,"reps":10,"weight_lb":50}]}]}`. Weekdays are 0 Monday through 6 Sunday. HH:MM is the user's local wall time; it is informational and sends no reminder. A week contains 1–7 distinct training days, each with 1–10 unique muscles and 1–8 valid catalog exercises. Plans receive the same catalog, muscle-match, excluded-exercise, settings and weight validation as session creation. An invalid day rejects the entire schedule write. Profile tokens remain separate from session tokens.
+
+The new SQLite user_schedules table is keyed by user_id and created automatically without altering existing users/session data. Schedule is preserved when Google sign-in rotates a token, across backend restart, and through ordinary PUT /profile saves. Saving today's edited plan does not rewrite the weekly template. Create a plan is the explicit recurring-plan path: each saved day is written with PUT /profile/schedule. Canonical schemas: WeeklyWorkout, ScheduleUpdate, UserProfile and AuthResult. Session/watch/voice contracts are unchanged by weekly setup.
+
+The shared app opens muscle selection after sign-in. Create a plan lists weekdays vertically; a selected day shows its HH:MM time and then that day’s muscle map and save action. Switching days keeps an unsaved draft for the day you left. Times do not gate workouts or send reminders. Previously completed/ended sessions are cleared when restored-profile setup is not the active workout screen, and an active workout is retained. Google authentication is still verified by the existing backend boundary.

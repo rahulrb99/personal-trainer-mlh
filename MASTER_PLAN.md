@@ -6,6 +6,8 @@ Updated October 11, 2026. This replaces the simulator-first plan. Implementation
 
 Spotter is the product; Mat is the default, user-renamable voice coach. The user sets preferences and a routine, then follows spoken guidance through exercises, sets and rests. User-reported equipment availability triggers preference-aware reordering or an approved substitution.
 
+Weekly setup scope update (October 11): signed-in setup opens on today’s muscle map and workout builder. Create a plan, at the top of that screen, lists Monday–Sunday vertically on the left. Each chosen day asks for a local time, then muscle selection and a saved equipment plan underneath. The same steps apply to every day. Today’s one-off workout does not rewrite the week. Schedule only; no reminders.
+
 Workout tracking scope update (October 11): equipment confirmation starts a persisted set timer; completing a set saves duration, planned reps and weight per exercise. Rest expiry starts the next timer. Mat offers conditional next-set weight changes and only explicit user confirmation updates pounds through a validated action. Saved set history never changes retroactively. Live provider tools/prompt and native acceptance require separate verification.
 
 Web entry scope update (October 11): show a themed landing page with Google sign-in first. After backend verification, greet the user by first name and open muscle-first setup (or restore their saved plan/session). The developer watch route continues to use session-token pairing. Native Google sign-in remains separate unfinished work.

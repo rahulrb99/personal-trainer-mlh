@@ -22,6 +22,7 @@ from backend.models import (
     PlanRequest,
     PongFrame,
     ProfileUpdate,
+    ScheduleUpdate,
     Snapshot,
     SnapshotFrame,
     StreamAuthorization,
@@ -88,6 +89,10 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
     @app.put("/profile", response_model=UserProfile)
     def put_profile(update: ProfileUpdate, token: str = Depends(bearer)):
         return store.save_profile(token, update)
+
+    @app.put("/profile/schedule", response_model=UserProfile)
+    def put_schedule(update: ScheduleUpdate, token: str = Depends(bearer)):
+        return store.save_schedule(token, update)
 
     @app.post("/plans/preview", response_model=PlanPreview)
     def plan_preview(request: PlanRequest):

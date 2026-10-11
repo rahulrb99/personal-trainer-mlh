@@ -1,0 +1,34 @@
+{
+  "schedule": [
+    {
+      "weekday": 0,
+      "time": "18:30",
+      "muscle_group_ids": [
+        "chest"
+      ],
+      "plan": [
+        {
+          "exercise_id": "chest-press",
+          "sets": 2,
+          "reps": 10,
+          "weight_lb": 50
+        }
+      ]
+    },
+    {
+      "weekday": 6,
+      "time": "09:30",
+      "muscle_group_ids": [
+        "quadriceps"
+      ],
+      "plan": [
+        {
+          "exercise_id": "leg-press",
+          "sets": 2,
+          "reps": 10,
+          "weight_lb": 50
+        }
+      ]
+    }
+  ]
+}

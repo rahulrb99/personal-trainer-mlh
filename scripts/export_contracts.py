@@ -22,6 +22,8 @@ from backend.models import (
     UserProfile,
     SetRecord,
     WeightChange,
+    WeeklyWorkout,
+    ScheduleUpdate,
 )
 from backend.app import app
 from backend.voice import VoiceRequest, VoiceAuthorization
@@ -50,6 +52,8 @@ if __name__ == "__main__":
         ProfileUpdate,
         SetRecord,
         WeightChange,
+        WeeklyWorkout,
+        ScheduleUpdate,
     ):
         (target / f"{model.__name__}.schema.json").write_text(json.dumps(model.model_json_schema(), indent=2) + "\n")
     (target / "openapi.json").write_text(json.dumps(app.openapi(), indent=2) + "\n")

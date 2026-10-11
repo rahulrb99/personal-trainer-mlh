@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { z } from 'zod';
-import { Action, Credentials, PlannedExercise, Preferences, ProfileAuth, Snapshot, WeightChange, authResultSchema, catalogSchema, createResultSchema, eventResultSchema, healthSchema, planPreviewSchema, snapshotSchema, summarySchema, userProfileSchema } from './schema';
+import { Action, Credentials, PlannedExercise, Preferences, ProfileAuth, Snapshot, WeightChange, WeeklyWorkout, authResultSchema, catalogSchema, createResultSchema, eventResultSchema, healthSchema, planPreviewSchema, snapshotSchema, summarySchema, userProfileSchema } from './schema';
 
 export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 export class ApiError extends Error {
@@ -33,6 +33,7 @@ export const api = {
   googleSignIn: (id_token: string) => request('/auth/google', authResultSchema, undefined, { id_token }),
   profile: (auth: ProfileAuth) => request('/profile', userProfileSchema, auth),
   saveProfile: (auth: ProfileAuth, body: { name: string; preferences: Preferences; muscle_group_ids: string[]; plan: PlannedExercise[] | null }) => request('/profile', userProfileSchema, auth, body, 'PUT'),
+  saveSchedule: (auth: ProfileAuth, schedule: WeeklyWorkout[]) => request('/profile/schedule', userProfileSchema, auth, { schedule }, 'PUT'),
   previewPlan: (muscle_group_ids: string[]) => request('/plans/preview', planPreviewSchema, undefined, { muscle_group_ids }),
   create: (preferences: Preferences, demo_mode: boolean, selected_muscle_group_ids: string[], plan: PlannedExercise[]) => request('/sessions', createResultSchema, undefined, {
     routine_id: 'full-body', preferences, demo_mode, selected_muscle_group_ids, plan,
