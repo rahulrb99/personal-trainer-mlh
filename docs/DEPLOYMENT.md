@@ -102,6 +102,13 @@ Connect this repository and deploy the branch containing `vercel.json`:
 - **Node.js:** 24.x.
 - Install command, build command and output directory are supplied by `vercel.json`.
 
+The install command is `cd mobile && npm ci`; the build command is
+`node scripts/check_web_deploy.mjs && cd mobile && npm run export:web`.
+Keep Root Directory at the repository root. If an install reports that no
+lockfile exists, verify the deployed commit contains `mobile/package-lock.json`
+and that commands are running from the expected directory. Do not replace the
+locked install with `npm install` to hide a path/configuration problem.
+
 Add both variables to the intended Vercel environments (Production and Preview
 if used) before rebuilding:
 

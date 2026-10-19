@@ -328,3 +328,30 @@ and server reads/actions reconcile persisted rest deadlines. SQLite retains its
 local worker. Snowflake export is currently SQLite-only and does not export new
 Neon events; no claim of cloud analytics support. Backend run commands now load
 backend/.env without overriding hosting environment variables.
+
+
+## Vercel npm lockfile discovery — October 19, 2026
+
+Owner: Thanmay/macOS; Node 24.13.1, npm 11.8.0. User-provided Vercel
+log for ede7842 fails at `npm ci --prefix mobile` with EUSAGE. The same
+commit contains mobile/package-lock.json (version 3); local dry-run accepts
+the manifest/lockfile. Exact Vercel npm version/root-directory environment
+was unavailable, so the hosted root cause is not fully reproduced.
+
+Changed root vercel.json to explicitly enter mobile for install/export:
+`cd mobile && npm ci` and
+`node scripts/check_web_deploy.mjs && cd mobile && npm run export:web`.
+Updated deployment troubleshooting; no dependencies or lockfile changes.
+
+PASS: copied only package.json/package-lock.json to an isolated temporary
+mobile directory, then ran `npm ci --offline --no-audit --no-fund` from that
+directory (clean install; no existing node_modules from the app).
+PASS: exact new build command with explicitly supplied placeholder HTTPS API
+and Google client ID exported index/watch/sitemap/not-found routes. This
+checks bundling only; no network/API/provider acceptance. Existing Three.js
+CommonJS warning remains.
+PASS: git diff --check. NOT RUN: Vercel redeployment.
+Next: publish the changed config/docs through the user's normal Git flow,
+keep Vercel Root Directory at repository root and redeploy. If install still
+fails, capture effective working directory/npm version and lockfile presence
+from the hosted environment. No commit, push, deployment or cloud-data changes.
