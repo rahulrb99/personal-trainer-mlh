@@ -20,7 +20,7 @@ Pydantic models in `backend/models.py` define input/response shapes. Regenerate 
 | POST /voice/token | Bearer session token | Short-lived ElevenLabs WebRTC token; session_id in body |
 | WS /sessions/{id}/stream | First JSON frame carries access_token | Versioned snapshot frames, optional ping/pong |
 
-Google sign-in body: `{"id_token":"..."}`. The backend verifies the token against `GOOGLE_CLIENT_ID` with Google tokeninfo, upserts a SQLite user keyed by Google `sub`, and returns `{profile, access_token}`. The profile token is separate from the workout session token. `PUT /profile` stores the approved name, preferences, selected muscle groups and plan for the next visit. The web landing gates setup on Google sign-in; backend session endpoints retain their local prototype authorization policy and native development setup remains available. `/health.google_auth_configured` reports a nonblank `GOOGLE_CLIENT_ID` only.
+Google sign-in body: `{"id_token":"..."}`. The backend verifies the token against `GOOGLE_CLIENT_ID` with Google tokeninfo, upserts a persisted user keyed by Google `sub`, and returns `{profile, access_token}`. The profile token is separate from the workout session token. `PUT /profile` stores the approved name, preferences, selected muscle groups and plan for the next visit. The web landing gates setup on Google sign-in; backend session endpoints retain their local prototype authorization policy and native development setup remains available. `/health.google_auth_configured` reports a nonblank `GOOGLE_CLIENT_ID` only.
 
 Plan preview body: `{"muscle_group_ids":["chest","back"]}`. The backend selects up to two configured machines per group in round-robin order, removes duplicates and caps the result at eight.
 
@@ -88,3 +88,17 @@ UserProfile adds `schedule` (defaults to an empty array for legacy profiles). `P
 The new SQLite user_schedules table is keyed by user_id and created automatically without altering existing users/session data. Schedule is preserved when Google sign-in rotates a token, across backend restart, and through ordinary PUT /profile saves. Saving today's edited plan does not rewrite the weekly template. Create a plan is the explicit recurring-plan path: each saved day is written with PUT /profile/schedule. Canonical schemas: WeeklyWorkout, ScheduleUpdate, UserProfile and AuthResult. Session/watch/voice contracts are unchanged by weekly setup.
 
 The shared app opens muscle selection after sign-in. Create a plan lists weekdays vertically; a selected day shows its HH:MM time and then that day’s muscle map and save action. Switching days keeps an unsaved draft for the day you left. Times do not gate workouts or send reminders. Previously completed/ended sessions are cleared when restored-profile setup is not the active workout screen, and an active workout is retained. Google authentication is still verified by the existing backend boundary.
+
+
+## PostgreSQL persistence — October 19
+
+No HTTP, tool, snapshot or schema-version changes. DATABASE_URL selects Neon
+PostgreSQL, with SQLite retained when unset. Store transactions remain serialized
+using a transaction-scoped advisory lock on PostgreSQL; deduplication and updates
+commit atomically. Migration SQL is tracked in backend/migrations/.
+
+PostgreSQL rest deadlines reconcile on server snapshot/event access (including
+active streams), without an idle background database scan. With no clients, the
+next request reconciles the deadline. Timer transitions remain server-authoritative
+and idempotent; ended sessions do not advance. See docs/DEPLOYMENT.md for setup,
+SQLite import and the current SQLite-only Snowflake exporter limitation.

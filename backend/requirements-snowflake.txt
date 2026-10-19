@@ -1,0 +1,2 @@
+# Optional analytics operator dependency; not needed by the workout server.
+snowflake-connector-python==4.8.0

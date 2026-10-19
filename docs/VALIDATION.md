@@ -243,3 +243,88 @@ Merged Rahul’s `50b4437` set-timer/confirmed-weight work with local trainer-pe
 User requested removal of the LiveKit signal-stream error popup on Disconnect voice. The app marks the conversation before intentional disconnect (including workout completion); for ten seconds, only that room's exact signal-stream WebSocket ConnectionError is logged at info instead of error, keeping it out of Expo's error overlay. Other rooms/errors and SDK error handling remain unchanged. No console monkey-patch, global LogBox suppression, or dependency edits. End-session promise failures surface an actionable inline error.
 
 PASS: mobile typecheck and lint; focused logger harness confirms intentional hangup is informational while other rooms, messages and error types retain error reporting. Live browser/native disconnect and reconnect NOT RUN; reload the app to pick up the logging change.
+
+
+## Web 3D default and removal of 2D — October 11, 2026
+
+Supersedes the earlier user-selectable 2D fallback. Web setup automatically attempts 3D; the unused web schematic and mode switch are removed. WebGL/model failures show an error and Retry, with muscle buttons outside the error boundary. Retry clears the GLTF loader cache and remounts the model without changing selection. Existing rotation/highlighting code and native rendering remain unchanged. No API changes.
+
+Mac checks: `npm run typecheck`, `npm run lint -- --no-cache`, `npm run export:web`, and `git diff --check` PASS. Export retains the existing Three.js CommonJS and color-environment warnings. Chrome at localhost:8081 PASS: automatic startup reaches the explicit WebGL failure UI; no 2D map/toggle; Chest selection remains enabled and survives Retry; Retry visibly enters Starting 3D model before returning to the error. Original selection restored after checking. Successful 3D rendering, rotation, and visual highlighting remain NOT VERIFIED in this tab because canvas creation reports WebGL unavailable. No commit, push, or deployment.
+
+
+### Correction: false WebGL error fixed — October 11, 2026
+
+The preceding WebGL-unavailable observation was caused by our throwing Canvas fallback, not evidence that the browser lacked WebGL. Installed React Three Fiber 9.8.1 mounts its `fallback` as canvas DOM children even when WebGL is supported. Replaced that unconditional throw with passive text; actual renderer configuration failures already propagate to the error boundary. Preflight now requires WebGL2, matching installed Three.js. After reload, Chrome localhost:8081 successfully loaded and visibly rendered the 3D anatomy with existing muscle highlights and no error panel. Typecheck, lint, and web export PASS; existing upstream export warnings remain. Genuine renderer-failure recovery was not re-induced in this follow-up.
+
+
+### Centered anatomy framing — October 11, 2026
+
+Camera and orbit target now align with the normalized model origin (y=0); camera distance increased from 5 to 5.8 to leave head/foot margins. Chrome localhost:8081 visual PASS: full body centered and feet no longer clipped. `npm run typecheck` and `npm run lint -- --no-cache` PASS. Native rendering unchanged.
+
+## UI polish — October 11, 2026 (macOS)
+
+Refined shared action buttons with outlined secondary actions, readable disabled states, focus feedback, and selected accessibility state. Muscle choices now have checkmarks and 48px targets; set steppers have 44px targets and visible disabled/pressed states. Setup gains a header divider, smaller panel headings, phone spacing, a safer two-column breakpoint, wrapping summary metrics, and a trainer card that wraps without crushing its text. Weekly planning retains the left day rail with abbreviated visual labels on phones and full accessible names. No API or workout-state changes.
+
+PASS: mobile `npm run typecheck`, `npm run lint -- --no-cache`, `npm run export:web`; `git diff --check`. Export retains existing Three.js CommonJS and color-environment warnings.
+PASS: Chrome desktop visual inspection of setup and selected controls; 390px viewport trainer wrapping, weekly day selection/time field, disabled Build this day with no selection, and no document horizontal overflow. Returned to today's setup and reset viewport. Evidence: `docs/evidence/ui-polish-controls.png`.
+NOT RUN: native runtime, live voice, full workout replay, landing/sign-in visual regression. Existing muscle-model and planning-document edits preserved.
+
+UI placement follow-up: moved Create a plan (and the corresponding Today’s workout return action) into the welcome row, right-aligned on desktop and below the greeting on phones. Removed its separate row above the greeting. Mobile typecheck, lint, and diff whitespace checks PASS.
+
+## Snowflake analytics — October 11, 2026
+
+Explicit user selection: Snowflake for workout analytics. Added optional connector dependency, read-only local event extraction, sequential retry-safe MERGE export, equipment insights view/query, and setup/demo runbook. Existing workout engine/API unchanged. No user profiles, tokens, trainer preferences or free-form motivation are exported.
+
+PASS (macOS): `.venv/bin/python -m pytest backend/tests -q` — 75 passed, one existing AnyIO deprecation warning. New tests cover accepted-only extraction, retry deduplication, completed exercise/set metrics, deferred equipment mapping, allowlisted fields and missing source failing without creating a DB. `.venv/bin/python -m backend.snowflake_sync --dry-run` — 44 accepted events across 11 sessions. `git diff --check` PASS.
+
+NOT RUN: live Snowflake authentication, DDL/MERGE/view execution, repeated-sync cloud row counts and live worksheet demonstration. Account/warehouse/database/schema connection setup is pending. Local test success does not establish a working sponsor integration. Sync is operator-triggered, single-writer, and full-scan; no auto streaming or UI dashboard. No cloud data changed, commit, push or deployment.
+
+
+## Vercel web deployment configuration — October 19, 2026
+
+Changed files: root `vercel.json`, `scripts/check_web_deploy.mjs`,
+`docs/DEPLOYMENT.md`, README, master plan and this record. Existing uncommitted
+UI and Snowflake work preserved. No contract or backend behavior changes.
+Owner: Thanmay/macOS; Node v24.13.1.
+
+- PASS: `npm run typecheck --prefix mobile`.
+- PASS: `npm run lint --prefix mobile -- --no-cache`.
+- PASS: `EXPO_PUBLIC_API_URL=https://api.example.com EXPO_PUBLIC_GOOGLE_CLIENT_ID=build-check.apps.googleusercontent.com node scripts/check_web_deploy.mjs` followed by `npm run export:web --prefix mobile` with the same public variables. These are test placeholders, not a real provider or API. Export includes index, watch, sitemap and not-found HTML, model and Draco assets. Existing Three.js CommonJS and color-environment warnings remain.
+- PASS: five subprocess guard cases: missing variables, HTTP localhost, HTTPS localhost and missing Google client ID reject; HTTPS API plus client ID accepts.
+- PASS: `git diff --check`.
+- NOT RUN: clean Vercel install/build, public deployment, hosted Google sign-in, backend volume persistence, WebSocket synchronization and live voice.
+
+Next action: supply a persistent single-instance backend, configure its HTTPS URL
+and matching Google OAuth client ID in Vercel, add exact Google/CORS frontend
+origins, deploy the branch containing the root configuration, then run the hosted
+checks in `docs/DEPLOYMENT.md`. No commit, push or cloud settings changed.
+
+
+## Neon PostgreSQL integration — October 19, 2026
+
+Owner: Thanmay/macOS; Python 3.14, Psycopg 3.3.3, isolated local PostgreSQL 18.
+Changed: backend/database.py, store.py, app.py, requirements.txt, .env.example,
+backend/migrations/001_initial.sql, migrate_sqlite.py, database/config tests,
+test isolation, README, API/deployment docs, master plan and this record. Existing
+UI/Snowflake work preserved. No client, tool, canonical contract or watch changes.
+
+- PASS: `SPOTTER_TEST_DATABASE_URL=postgresql://spotter_test@127.0.0.1:55439/spotter_test .venv/bin/python -m pytest backend/tests -q` — 97 passed, one existing AnyIO deprecation warning. Actual PostgreSQL covers full/deferred workouts, alternatives/exclusions, duplicate/conflicting retries, concurrent completions, profile/login races and token rotation, schedules, restart-safe rests, timing/weight history, ended sessions, HTTP/stream synchronization, rollback and no idle polling.
+- PASS: `.venv/bin/python -m pytest backend/tests -q` — 77 passed, 20 explicit local-PostgreSQL tests skipped when their test URL is absent; routine collection ignores developer/cloud DB settings.
+- PASS: real SQLite-to-local-PostgreSQL migration preserves all four tables, IDs and tokens; nonempty target refuses import; a deliberately invalid text value midway through copying rolls back every inserted row.
+- PASS: read-only `SELECT 1` using DATABASE_URL from ignored backend/.env against Neon. Credentials and endpoint withheld. This proves connectivity only, not cloud workflow acceptance.
+- PASS: `.venv/bin/python -m backend.migrate_sqlite` — source counts: 25 sessions, 76 events, 2 users, 2 schedules. Ignored pre-Neon SQLite backup created in backend/data; source file retained.
+- PASS: `git diff --check`.
+- BLOCKED pending explicit owner approval: actual transfer of existing records to Neon. Automatic approval review rejected `python -m backend.migrate_sqlite --apply` because its payload includes profiles, session/event state and token hashes, and requested specific authorization for this payload/destination. No transfer occurred and no workaround was used.
+- NOT RUN: live Neon schema initialization/import, live Neon profile/session/voice/browser walkthrough, hosted deployment and native tests. Local database tests do not prove those gates.
+
+Next action: obtain explicit approval to copy the listed records to the Neon
+database configured in backend/.env, then run the tested migration and verify
+cloud counts/workflows. A clean empty-cloud start is also available if the owner
+chooses it. No commit, push, deployment or external provider changes.
+
+Handoff: PostgreSQL uses transaction-scoped serialization across all store
+operations. No idle half-second expiry worker runs for PostgreSQL; active streams
+and server reads/actions reconcile persisted rest deadlines. SQLite retains its
+local worker. Snowflake export is currently SQLite-only and does not export new
+Neon events; no claim of cloud analytics support. Backend run commands now load
+backend/.env without overriding hosting environment variables.

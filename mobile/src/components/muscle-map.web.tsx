@@ -8,8 +8,13 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { activeMuscleColor, MuscleGroupSelector } from '@/components/muscle-group-selector';
 import { muscleGroupForMesh, type MuscleGroupId } from '@/components/muscle-model-aliases';
-import { SchematicMuscleMap, type MuscleMapProps } from '@/components/muscle-map-schematic';
 import { colors } from '@/theme';
+
+type MuscleMapProps = {
+  groups: { id: string; name: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+};
 
 const modelUrl = '/models/muscular.glb';
 const selectedColor = new Color(activeMuscleColor);
@@ -206,7 +211,7 @@ function probeWebGL() {
     const canvas = document.createElement('canvas');
     canvas.width = 560;
     canvas.height = 520;
-    const context = canvas.getContext('webgl2', webglOptions) || canvas.getContext('webgl', webglOptions);
+    const context = canvas.getContext('webgl2', webglOptions);
     if (!context) return false;
     context.getExtension('WEBGL_lose_context')?.loseContext();
     canvas.width = 0;
@@ -231,7 +236,7 @@ function RotatingControls() {
     next.maxDistance = 8;
     next.minPolarAngle = Math.PI / 2;
     next.maxPolarAngle = Math.PI / 2;
-    next.target.set(0, 0.45, 0);
+    next.target.set(0, 0, 0);
     return next;
   }, [camera, gl]);
   useEffect(() => () => controls.dispose(), [controls]);
@@ -269,9 +274,9 @@ function InteractiveModel({ selected, onToggle }: Pick<MuscleMapProps, 'selected
   return <View style={styles.viewport}>
     <Canvas
       aria-label="Rotating interactive anatomical muscle model"
-      camera={{ position: [0, 0.45, 5], fov: 40 }}
+      camera={{ position: [0, 0, 5.8], fov: 40 }}
       dpr={1}
-      fallback={<View style={styles.unavailable}><Text style={styles.loadingText}>3D view unavailable. Use the muscle buttons below.</Text></View>}
+      fallback={<Text>This browser does not support canvas. Use the muscle buttons below.</Text>}
       gl={webglOptions}
     >
       <color attach="background" args={['#F3F6FA']} />
@@ -290,34 +295,14 @@ function InteractiveModel({ selected, onToggle }: Pick<MuscleMapProps, 'selected
   </View>;
 }
 
-function LightweightMap({ groups, selected, onToggle, busy, message, onTry3D }: MuscleMapProps & {
-  busy: boolean;
-  message: string | null;
-  onTry3D: () => void;
-}) {
-  return <View style={styles.wrapper}>
-    <View style={styles.fallbackNotice}>
-      <Text style={styles.fallbackTitle}>{busy ? 'Starting 3D model…' : 'Lightweight body map'}</Text>
-      <Text style={styles.instructions}>
-        {message ?? 'The 2D map uses no WebGL and keeps every muscle-selection feature available.'}
-      </Text>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={onTry3D} style={[styles.modeButton, busy && styles.modeButtonDisabled]}>
-        <Text style={styles.modeButtonText}>{busy ? 'Trying 3D…' : 'Try 3D model'}</Text>
-      </Pressable>
-    </View>
-    <SchematicMuscleMap groups={groups} selected={selected} onToggle={onToggle} />
-  </View>;
-}
-
-type MapMode = '3d' | '2d';
-
 export function MuscleMap({ groups, selected, onToggle }: MuscleMapProps) {
-  const [mode, setMode] = useState<MapMode>('2d');
   const [retryKey, setRetryKey] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
-  function start3D() {
+  function retry() {
+    // Failed loader results are cached; clear them so Retry makes a fresh request.
+    useLoader.clear(GLTFLoader, modelUrl);
     setMessage(null);
     setBusy(true);
   }
@@ -326,62 +311,42 @@ export function MuscleMap({ groups, selected, onToggle }: MuscleMapProps) {
     if (!busy) return;
     const timer = setTimeout(() => {
       if (!probeWebGL()) {
-        setBusy(false);
-        setMode('2d');
-        setMessage('3D is unavailable in this browser tab. Close other WebGL tabs, refresh, then try again. The 2D map still builds the workout.');
-        return;
+        setMessage('3D is unavailable in this browser tab. Close other WebGL tabs and retry. You can still select muscles below.');
+      } else {
+        setRetryKey(value => value + 1);
       }
-      setRetryKey(value => value + 1);
-      setMode('3d');
       setBusy(false);
     }, 250);
     return () => clearTimeout(timer);
   }, [busy]);
 
   function handleModelFailure() {
-    setMode('2d');
-    setBusy(false);
-    setMessage('3D could not start in this tab. The 2D map still works — refresh after closing extra tabs if you want to retry 3D.');
+    setMessage('The 3D model could not load. Retry, or use the muscle buttons below.');
   }
 
-  if (mode === '2d' || busy) {
-    return <LightweightMap
-      groups={groups}
-      selected={selected}
-      onToggle={onToggle}
-      busy={busy}
-      message={message}
-      onTry3D={start3D}
-    />;
-  }
+  const errorNotice = <View style={styles.fallbackNotice}>
+    <Text accessibilityRole="alert" style={styles.fallbackTitle}>3D view unavailable</Text>
+    <Text style={styles.instructions}>{message ?? 'The 3D model could not load. Retry, or use the muscle buttons below.'}</Text>
+    <Pressable accessibilityRole="button" onPress={retry} style={styles.modeButton}>
+      <Text style={styles.modeButtonText}>Retry</Text>
+    </Pressable>
+  </View>;
 
-  return <ModelErrorBoundary key={retryKey} fallback={<LightweightMap
-    groups={groups}
-    selected={selected}
-    onToggle={onToggle}
-    busy={false}
-    message={message ?? '3D could not start in this tab. The 2D map still works — refresh after closing extra tabs if you want to retry 3D.'}
-    onTry3D={start3D}
-  />} onError={handleModelFailure}>
-    <View style={styles.wrapper}>
+  return <View style={styles.wrapper}>
+    {busy ? <View style={styles.fallbackNotice}>
+      <Text style={styles.loadingText}>Starting 3D model…</Text>
+    </View> : message ? errorNotice : <ModelErrorBoundary key={retryKey} fallback={errorNotice} onError={handleModelFailure}>
       <InteractiveModel selected={selected} onToggle={onToggle} />
       <Text style={styles.instructions}>Selected muscles turn bright red against neutral anatomy. The rotation axis passes vertically through the body.</Text>
-      <Pressable accessibilityRole="button" onPress={() => {
-        setMessage(null);
-        setMode('2d');
-      }} style={styles.modeButton}>
-        <Text style={styles.modeButtonText}>Use lightweight 2D map</Text>
-      </Pressable>
-      <MuscleGroupSelector groups={groups} selected={selected} onToggle={onToggle} />
-    </View>
-  </ModelErrorBoundary>;
+    </ModelErrorBoundary>}
+    <MuscleGroupSelector groups={groups} selected={selected} onToggle={onToggle} />
+  </View>;
 }
 
 const styles = StyleSheet.create({
   wrapper: { gap: 12 },
   viewport: { position: 'relative', width: '100%', height: 520, overflow: 'hidden', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: '#F3F6FA' },
   loading: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(243, 246, 250, 0.72)' },
-  unavailable: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F6FA' },
   loadingText: { color: colors.secondary, fontWeight: '600' },
   hint: { position: 'absolute', left: 12, right: 12, bottom: 12, alignItems: 'center' },
   hintText: { color: colors.ink, fontSize: 12, fontWeight: '600', backgroundColor: 'rgba(255, 255, 255, 0.88)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
@@ -389,6 +354,5 @@ const styles = StyleSheet.create({
   fallbackNotice: { gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.paleBlue },
   fallbackTitle: { color: colors.ink, fontSize: 15, fontWeight: '700' },
   modeButton: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFFFFF' },
-  modeButtonDisabled: { opacity: 0.55 },
   modeButtonText: { color: colors.blue, fontSize: 13, fontWeight: '700' },
 });

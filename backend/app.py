@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -33,6 +34,7 @@ from backend.store import Store, StoreError
 from backend.voice import VoiceAuthorization, VoiceRequest, authorize_voice, voice_configured
 
 ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / "backend/.env", override=False)
 CATALOG = json.loads((ROOT / "catalog/demo.json").read_text(encoding="utf-8"))
 security = HTTPBearer(auto_error=False)
 
@@ -44,7 +46,7 @@ def bearer(credentials: HTTPAuthorizationCredentials | None = Depends(security))
 
 
 def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseTransport | None = None, google_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
-    store = Store(database or os.environ.get("SPOTTER_DATABASE", str(ROOT / "backend/data/spotter.sqlite3")), CATALOG)
+    store = Store(database or os.environ.get("DATABASE_URL") or os.environ.get("SPOTTER_DATABASE", str(ROOT / "backend/data/spotter.sqlite3")), CATALOG)
 
     async def tick():
         while True:
@@ -53,13 +55,16 @@ def create_app(database: str | None = None, *, voice_transport: httpx.AsyncBaseT
 
     @asynccontextmanager
     async def lifespan(app):
-        worker = asyncio.create_task(tick())
+        # PostgreSQL expires persisted deadlines on snapshot/event access. Active
+        # streams already fetch snapshots; no idle polling keeps Neon awake.
+        worker = None if store.database.postgres else asyncio.create_task(tick())
         try:
             yield
         finally:
-            worker.cancel()
-            with suppress(asyncio.CancelledError):
-                await worker
+            if worker is not None:
+                worker.cancel()
+                with suppress(asyncio.CancelledError):
+                    await worker
 
     app = FastAPI(title="Spotter workout API", version="1.0.0", lifespan=lifespan)
     app.state.store = store

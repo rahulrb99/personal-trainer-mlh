@@ -20,9 +20,9 @@ export function MuscleGroupSelector({ groups, selected, onToggle }: Props) {
         accessibilityState={{ selected: isSelected }}
         accessibilityLabel={`${isSelected ? 'Remove' : 'Add'} ${group.name} ${isSelected ? 'from' : 'to'} today's workout`}
         onPress={() => onToggle(group.id)}
-        style={[styles.choice, isSelected && styles.choiceSelected]}
+        style={({ pressed }) => [styles.choice, isSelected && styles.choiceSelected, pressed && { opacity: 0.72 }]}
       >
-        <View style={[styles.swatch, isSelected && styles.swatchSelected]} />
+        <View style={[styles.swatch, isSelected && styles.swatchSelected]}>{isSelected && <Text style={styles.check}>✓</Text>}</View>
         <Text style={[styles.label, isSelected && styles.labelSelected]}>{group.name}</Text>
       </Pressable>;
     })}
@@ -31,10 +31,11 @@ export function MuscleGroupSelector({ groups, selected, onToggle }: Props) {
 
 const styles = StyleSheet.create({
   checklist: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  choice: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 42, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: '#F8FAFD' },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: '#F8FAFD' },
   choiceSelected: { borderColor: activeMuscleColor, backgroundColor: '#FCECEF' },
-  swatch: { width: 12, height: 12, borderRadius: 6, backgroundColor: inactiveMuscleColor },
+  swatch: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: inactiveMuscleColor },
   swatchSelected: { backgroundColor: activeMuscleColor },
+  check: { color: colors.paper, fontSize: 12, fontWeight: '700' },
   label: { color: colors.secondary, fontWeight: '600' },
   labelSelected: { color: colors.danger },
 });

@@ -1,14 +1,13 @@
 import hashlib
 import json
 import secrets
-import sqlite3
-from contextlib import contextmanager
+from contextlib import AbstractContextManager
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator
 from uuid import uuid4
 
+from backend.database import Connection, Database
 from backend.engine import TransitionError, expire_rest, new_session, summary, transition, utc_now
 from backend.models import CreateSession, Event, Preferences, ProfileUpdate, ScheduleUpdate
 
@@ -21,33 +20,16 @@ class StoreError(Exception):
 class Store:
     def __init__(self, path: str, catalog: dict):
         self.path, self.catalog = path, catalog
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.database = Database(path)
         with self.connect() as db:
-            db.executescript("""
-                CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, state TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS events (session_id TEXT NOT NULL, event_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(session_id,event_id));
-                CREATE TABLE IF NOT EXISTS users (
-                    id TEXT PRIMARY KEY,
-                    google_sub TEXT NOT NULL UNIQUE,
-                    email TEXT,
-                    name TEXT NOT NULL,
-                    token_hash TEXT NOT NULL,
-                    preferences TEXT NOT NULL,
-                    muscle_group_ids TEXT NOT NULL,
-                    plan TEXT
-                );
-                CREATE TABLE IF NOT EXISTS user_schedules (user_id TEXT PRIMARY KEY, schedule TEXT NOT NULL);
-            """)
+            db.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)")
+            if not db.execute("SELECT version FROM schema_migrations WHERE version=?", (1,)).fetchone():
+                migration = Path(__file__).with_name("migrations") / "001_initial.sql"
+                db.executescript(migration.read_text(encoding="utf-8"))
+                db.execute("INSERT INTO schema_migrations VALUES (?)", (1,))
 
-    @contextmanager
-    def connect(self) -> Iterator[sqlite3.Connection]:
-        db = sqlite3.connect(self.path, timeout=10)
-        db.execute("PRAGMA busy_timeout=10000")
-        try:
-            with db:
-                yield db
-        finally:
-            db.close()
+    def connect(self) -> AbstractContextManager[Connection]:
+        return self.database.connect()
 
     def create(self, request: CreateSession) -> dict:
         try:
@@ -63,7 +45,7 @@ class Store:
     def digest(token: str) -> str:
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def load(self, db: sqlite3.Connection, session_id: str, token: str) -> dict:
+    def load(self, db: Connection, session_id: str, token: str) -> dict:
         row = db.execute("SELECT token_hash,state FROM sessions WHERE id=?", (session_id,)).fetchone()
         if not row or not secrets.compare_digest(row[0], self.digest(token)):
             raise StoreError("Session not found or token invalid", 401)
@@ -73,7 +55,7 @@ class Store:
         return state
 
     @staticmethod
-    def save(db: sqlite3.Connection, state: dict) -> None:
+    def save(db: Connection, state: dict) -> None:
         db.execute("UPDATE sessions SET state=? WHERE id=?", (json.dumps(state), state["session_id"]))
 
     def hydrate_exercise(self, exercise: dict) -> bool:
@@ -119,7 +101,6 @@ class Store:
     def get(self, session_id: str, token: str, now: datetime | None = None) -> dict:
         now = now or utc_now()
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
             state = self.load(db, session_id, token)
             if expire_rest(state, now):
                 self.save(db, state)
@@ -130,7 +111,6 @@ class Store:
         now = now or utc_now()
         request = event.model_dump_json()
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
             state = self.load(db, session_id, token)
             previous = db.execute("SELECT request,result FROM events WHERE session_id=? AND event_id=?", (session_id, str(event.event_id))).fetchone()
             if previous:
@@ -167,7 +147,7 @@ class Store:
             "schedule": json.loads(row[6]) if len(row) > 6 else [],
         }
 
-    def load_profile(self, db: sqlite3.Connection, token: str) -> tuple:
+    def load_profile(self, db: Connection, token: str) -> tuple:
         row = db.execute(
             "SELECT u.id,u.email,u.name,u.preferences,u.muscle_group_ids,u.plan,COALESCE(s.schedule,'[]') FROM users u LEFT JOIN user_schedules s ON s.user_id=u.id WHERE u.token_hash=?",
             (self.digest(token),),
@@ -235,7 +215,6 @@ class Store:
 
     def save_schedule(self, token: str, update: ScheduleUpdate) -> dict:
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
             row = self.load_profile(db, token)
             preferences = Preferences.model_validate_json(row[3])
             for workout in update.schedule:
@@ -252,7 +231,6 @@ class Store:
     def expire_due(self) -> None:
         now = utc_now()
         with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
             for row in db.execute("SELECT state FROM sessions").fetchall():
                 state = json.loads(row[0])
                 if expire_rest(state, now):

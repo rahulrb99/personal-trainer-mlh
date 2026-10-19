@@ -28,9 +28,13 @@ py -m venv .venv
 .\.venv\Scripts\python.exe scripts/run_backend.py
 ```
 
-Backend listens on http://127.0.0.1:8000. Interactive API at `/docs`. No Docker/database account required. Data persists under `backend/data/` and is ignored by Git. Run one process; do not pass multiple uvicorn workers.
+Backend listens on http://127.0.0.1:8000. Interactive API at `/docs`. No Docker/database account required. By default, data persists under `backend/data/` and is ignored by Git. To use Neon, add its PostgreSQL URL as `DATABASE_URL` in `backend/.env`; see [database setup and migration](docs/DEPLOYMENT.md#neon-and-existing-records). Existing environment settings take priority over `.env`. Run one process; do not pass multiple uvicorn workers.
 
 ## Web app
+
+For hosted web setup, see [Vercel deployment](docs/DEPLOYMENT.md). The root
+`vercel.json` exports the Expo website; FastAPI runs separately with Neon
+PostgreSQL (`DATABASE_URL`) or a SQLite file on a persistent host.
 
 In another terminal:
 
@@ -101,3 +105,7 @@ Confirming equipment starts a visible set timer. Set done stores each set's elap
 After sign-in, the default screen is today’s muscle map: select muscles and build the workout. **Create a plan**, at the top of that screen, opens the week. Days are listed vertically on the left. Choose a day, enter its local time, then select that day’s muscles underneath and save. Each day, including Tuesday, uses the same time, muscle, and save steps. Saved days stay marked on the left. Unselected days are rest days. Times organize the plan only; no reminders are sent. Today’s one-off workout does not rewrite the saved week.
 
 Verification command for local weekday/week-wrap behavior: `node scripts/check_schedule.cjs` from the repository root after installing mobile dependencies.
+
+## Snowflake workout analytics
+
+Optional batch export sends allowlisted accepted workout events to Snowflake for equipment Taken reports, completed-set counts and average set duration. SQLite continues to run workouts. See [setup and demo queries](docs/SNOWFLAKE.md). Validate extraction with `python -m backend.snowflake_sync --dry-run`; live upload requires a configured Snowflake connection.

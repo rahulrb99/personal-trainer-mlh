@@ -4,6 +4,20 @@ Updated October 11, 2026. This replaces the simulator-first plan. Implementation
 
 ## Outcome and scope
 
+Persistence update (October 19): Neon PostgreSQL is the selected hosted database.
+DATABASE_URL selects PostgreSQL; SQLite remains a local fallback. Preserve the
+existing serialized event semantics and versioned contracts. PostgreSQL reconciles
+persisted rests on server reads/actions rather than idle polling. Importing existing
+personal records is a distinct transfer; local backup remains intact. Cloud
+acceptance requires evidence beyond local PostgreSQL tests.
+
+Hosting update (October 19): export the web app to Vercel using root deployment
+configuration. Keep the authoritative FastAPI backend on a single-process host with Neon
+PostgreSQL, or persistent local SQLite; see `docs/DEPLOYMENT.md`. Hosted acceptance remains pending
+until the public API, Google sign-in, synchronization and live voice are checked.
+
+Web muscle visualization update (October 11): start the existing 3D anatomy automatically. Remove the web 2D view and mode switch. On failure, show an error and Retry with muscle buttons still usable; preserve selection across retries. Native rendering is unchanged.
+
 Spotter is the product; Mat is the default, user-renamable voice coach. The user sets preferences and a routine, then follows spoken guidance through exercises, sets and rests. User-reported equipment availability triggers preference-aware reordering or an approved substitution.
 
 Weekly setup scope update (October 11): signed-in setup opens on today’s muscle map and workout builder. Create a plan, at the top of that screen, lists Monday–Sunday vertically on the left. Each chosen day asks for a local time, then muscle selection and a saved equipment plan underneath. The same steps apply to every day. Today’s one-off workout does not rewrite the week. Schedule only; no reminders.
@@ -252,3 +266,7 @@ Acceptance tracker to create in `docs/VALIDATION.md`: Stage | Owner | Environmen
 ## Scope addition — Spanish trainer, October 11, 2026
 
 User requested English/Spanish spoken coaching selection in trainer customization. Persist the selection in trainer preferences, default legacy data to English, and use the session preference for greetings/reconnections. Menus remain English. Live provider activation and bilingual voice acceptance are separate from local implementation checks; see agent/README.md and docs/VALIDATION.md.
+
+## Scope addition — Snowflake analytics, October 11, 2026
+
+User selected Snowflake workout analytics. Keep SQLite as the transactional workout store; add an explicit operator batch export of allowlisted accepted workout events to Snowflake with equipment-report/completed-set insights. No workout API contract or client changes. Setup and demonstration: docs/SNOWFLAKE.md. Live Snowflake validation is a separate acceptance gate.

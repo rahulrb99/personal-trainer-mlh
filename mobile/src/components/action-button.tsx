@@ -1,10 +1,37 @@
-import { Pressable, Text } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { colors } from '@/theme';
 
-export function ActionButton({ title, onPress, disabled = false, secondary = false, danger = false }: { title: string; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} disabled={disabled} onPress={onPress} style={({ pressed }) => ({
-    minHeight: 48, paddingHorizontal: 22, paddingVertical: 14, borderRadius: 12,
-    backgroundColor: secondary ? colors.paleBlue : danger ? colors.danger : colors.blue,
-    opacity: disabled ? 0.45 : pressed ? 0.75 : 1, alignItems: 'center', justifyContent: 'center',
-  })}><Text style={{ fontSize: 15, fontWeight: '600', color: secondary ? colors.blue : '#FFFFFF' }}>{title}</Text></Pressable>;
+type Props = {
+  title: string;
+  onPress: () => void;
+  disabled?: boolean;
+  secondary?: boolean;
+  danger?: boolean;
+  selected?: boolean;
+};
+
+export function ActionButton({ title, onPress, disabled = false, secondary = false, danger = false, selected }: Props) {
+  const [focused, setFocused] = useState(false);
+  const foreground = disabled ? colors.secondary : secondary ? (danger ? colors.danger : colors.blue) : colors.paper;
+  return <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }) }}
+    disabled={disabled}
+    onPress={onPress}
+    onFocus={() => setFocused(true)}
+    onBlur={() => setFocused(false)}
+    style={({ pressed }) => [styles.button, {
+      backgroundColor: disabled ? colors.background : secondary ? colors.paper : danger ? colors.danger : colors.blue,
+      borderColor: focused ? colors.ink : secondary || disabled ? colors.border : 'transparent',
+      opacity: pressed ? 0.78 : 1,
+      boxShadow: focused ? `0 0 0 3px ${colors.paleBlue}` : 'none',
+    }]}
+  ><Text style={[styles.label, { color: foreground }]}>{title}</Text></Pressable>;
 }
+
+const styles = StyleSheet.create({
+  button: { minHeight: 48, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', flexShrink: 1 },
+  label: { fontSize: 15, lineHeight: 21, fontWeight: '600', textAlign: 'center' },
+});
